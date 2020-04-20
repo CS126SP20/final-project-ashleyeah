@@ -4,9 +4,14 @@
 #define FINALPROJECT_APPS_MYAPP_H_
 
 #include <cinder/app/App.h>
+#include <Box2D/Box2D.h>
 
 
 namespace myapp {
+
+using cinder::Color;
+using cinder::Rectf;
+using cinder::app::MouseEvent;
 
 class MyApp : public cinder::app::App {
  public:
@@ -15,6 +20,14 @@ class MyApp : public cinder::app::App {
   void update() override;
   void draw() override;
   void keyDown(cinder::app::KeyEvent) override;
+
+ private:
+  void CreateTableBody();
+  void DrawPoolTable() const;
+
+ private:
+  b2World* pool_world_;
+  b2Body* cue_ball_;
 };
 
 }  // namespace myapp
