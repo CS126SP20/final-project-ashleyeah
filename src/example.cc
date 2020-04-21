@@ -1,7 +1,7 @@
 // Copyright (c) 2020 [Your Name]. All rights reserved.
 
-#include <mylibrary/example.h>
+#include <pool/example.h>
 
-namespace mylibrary {
+namespace pool {
 
-}  // namespace mylibrary
+}  // namespace pool

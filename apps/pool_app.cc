@@ -1,75 +1,64 @@
 // Copyright (c) 2020 [Your Name]. All rights reserved.
 
-#include "my_app.h"
+#include "pool_app.h"
 
-#include <cinder/app/App.h>
+#include <Box2D/Box2D.h>
 #include <cinder/Text.h>
+#include <cinder/app/App.h>
 #include <cinder/gl/draw.h>
 #include <cinder/gl/gl.h>
-#include <Box2D/Box2D.h>
 
-
-namespace myapp {
+namespace poolapp {
 
 using cinder::Color;
-using cinder::ColorA;
 using cinder::Rectf;
-using cinder::TextBox;
 using cinder::app::KeyEvent;
 using cinder::app::MouseEvent;
-using std::chrono::duration_cast;
-using std::chrono::seconds;
-using std::chrono::system_clock;
-using std::string;
 
+PoolApp::PoolApp() {}
 
-MyApp::MyApp() {}
-
-void MyApp::setup() {
+void PoolApp::setup() {
   b2Vec2 gravity;
   gravity.Set(0.0f, 0.0f);
   pool_world_ = new b2World(gravity);
 
   b2BodyDef body_def;
   body_def.type = b2_dynamicBody;
-  body_def.gravityScale = 0.0f;
-  body_def.active = true;
-  body_def.position.Set(1000.0f, 500.0f);
+  body_def.position.Set(getWindowCenter().x - 200, getWindowCenter().y);
 
-  cue_ball_ = pool_world_->CreateBody(&body_def);
+  cue_ball_.SetBall(pool_world_->CreateBody(&body_def));
 
   b2CircleShape ballShape;
   ballShape.m_p.Set(0, 0);
-  ballShape.m_radius = 15.0f;
+  ballShape.m_radius = 17.0f;
 
   b2FixtureDef fixture_def;
   fixture_def.shape = &ballShape;
   fixture_def.restitution = 1.0f;
-  cue_ball_->CreateFixture(&fixture_def);
+  cue_ball_.GetBall()->CreateFixture(&fixture_def);
+
+  for (int i = 0; i < 1; ++i) {
+    body_def.position.Set(getWindowCenter().x + 200, getWindowCenter().y);
+    object_balls_.AddBall(pool_world_->CreateBody(&body_def));
+    object_balls_.GetBall(i)->CreateFixture(&fixture_def);
+  }
 
   CreateTableBody();
 }
 
-void MyApp::update() {
+void PoolApp::update() {
   for( int i = 0; i < 5; ++i ) {
     pool_world_->Step( 1 / 30.0f, 1, 10 );
   }
 }
 
-void MyApp::draw() {
+void PoolApp::draw() {
   cinder::gl::clear();
   DrawPoolTable();
-  float x = cue_ball_->GetPosition().x;
-  float y = cue_ball_->GetPosition().y;
-  const cinder::vec2 center = {x, y};
-
-  cinder::gl::pushModelMatrix();
-  cinder::gl::color(1.0f, 1.0f, 1.0f);
-  cinder::gl::drawSolidCircle(center, 15.0f);
-  cinder::gl::popModelMatrix();
+  DrawPoolBalls();
 }
 
-void MyApp::CreateTableBody() {
+void PoolApp::CreateTableBody() {
   b2BodyDef body_def;
   body_def.type = b2_kinematicBody;
 
@@ -110,15 +99,20 @@ void MyApp::CreateTableBody() {
   b2FrictionJointDef friction_joint_def;
   friction_joint_def.localAnchorA = temp_vec;
   friction_joint_def.localAnchorB = temp_vec;
-  friction_joint_def.bodyA = cue_ball_;
+  friction_joint_def.bodyA = cue_ball_.GetBall();
   friction_joint_def.bodyB = table_body;
-  friction_joint_def.maxForce = 1.0f;
+  friction_joint_def.maxForce = 0.8f;
   friction_joint_def.maxTorque = 0;
 
   pool_world_->CreateJoint(&friction_joint_def);
+
+  for (int i = 0; i < 1; ++i) {
+    friction_joint_def.bodyA = object_balls_.GetBall(i);
+    pool_world_->CreateJoint(&friction_joint_def);
+  }
 }
 
-void MyApp::DrawPoolTable() const {
+void PoolApp::DrawPoolTable() const {
   const cinder::vec2 center = getWindowCenter();
   const float table_x1 = center.x - 600;
   const float table_x2 = center.x + 600;
@@ -132,13 +126,38 @@ void MyApp::DrawPoolTable() const {
 
 }
 
-void MyApp::keyDown(KeyEvent event) {
+void PoolApp::DrawPoolBalls() const {
+  float x = cue_ball_.GetBall()->GetPosition().x;
+  float y = cue_ball_.GetBall()->GetPosition().y;
+  cinder::vec2 center = {x, y};
+
+  cinder::gl::color(1.0f, 1.0f, 1.0f);
+  cinder::gl::drawSolidCircle(center, 17.0f);
+
+  for (int i = 0; i < 1; ++i) {
+    x = object_balls_.GetBall(i)->GetPosition().x;
+    y = object_balls_.GetBall(i)->GetPosition().y;
+    center = {x, y};
+    cinder::gl::color(1.0f, 0.0f, 0.0f);
+    cinder::gl::drawSolidCircle(center, 17.0f);
+  }
+}
+
+void PoolApp::keyDown(KeyEvent event) {
   if (event.getCode() == KeyEvent::KEY_SPACE) {
-    b2Vec2 force(0.0f, 100.0f);
-    cue_ball_->ApplyForce(force, cue_ball_->GetPosition());
+    b2Vec2 force(0.0f, 10000.0f);
+    cue_ball_.GetBall()->ApplyForce(force, cue_ball_.GetBall()->GetPosition());
   } else if (event.getCode() == KeyEvent::KEY_LSHIFT) {
-    b2Vec2 force(-200.0f, 150.0f);
-    cue_ball_->ApplyForce(force, cue_ball_->GetPosition());
+    b2Vec2 force(-8000.0f, 6000.0f);
+    cue_ball_.GetBall()->ApplyForce(force, cue_ball_.GetBall()->GetPosition());
+  }
+}
+
+void PoolApp::mouseDown(MouseEvent event) {
+  if (event.isLeftDown()) {
+    float force_x = static_cast<float>(event.getX()) - cue_ball_.GetBall()->GetPosition().x;
+    float force_y = static_cast<float>(event.getY()) - cue_ball_.GetBall()->GetPosition().y;
+    cue_ball_.Move(force_x, force_y);
   }
 }
 
