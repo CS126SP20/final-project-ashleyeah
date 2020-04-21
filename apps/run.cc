@@ -12,8 +12,8 @@ using cinder::app::RendererGl;
 namespace poolapp {
 
 const int kSamples = 8;
-const int kWidth = 1700;
-const int kHeight = 1000;
+const int kWidth = 1800;
+const int kHeight = 1100;
 
 void SetUp(App::Settings* settings) {
   settings->setWindowSize(kWidth, kHeight);

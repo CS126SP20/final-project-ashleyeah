@@ -37,8 +37,8 @@ void PoolApp::setup() {
   fixture_def.restitution = 1.0f;
   cue_ball_.GetBall()->CreateFixture(&fixture_def);
 
-  for (int i = 0; i < 1; ++i) {
-    body_def.position.Set(getWindowCenter().x + 200, getWindowCenter().y);
+  for (int i = 0; i < 3; ++i) {
+    body_def.position.Set(getWindowCenter().x + 200, getWindowCenter().y - 25.5 + (i * 17));
     object_balls_.AddBall(pool_world_->CreateBody(&body_def));
     object_balls_.GetBall(i)->CreateFixture(&fixture_def);
   }
@@ -47,8 +47,8 @@ void PoolApp::setup() {
 }
 
 void PoolApp::update() {
-  for( int i = 0; i < 5; ++i ) {
-    pool_world_->Step( 1 / 30.0f, 1, 10 );
+  for( int i = 0; i < 8; ++i ) {
+    pool_world_->Step( 1 / 30.0f, 1, 1 );
   }
 }
 
@@ -93,6 +93,8 @@ void PoolApp::CreateTableBody() {
   bottom_edge->CreateFixture(&fixture_def);
 
   fixture_def.shape = &table_box;
+  fixture_def.isSensor = true;
+  fixture_def.friction = 1.0f;
   table_body->CreateFixture(&fixture_def);
 
   b2Vec2 temp_vec(0.0f, 0.0f);
@@ -101,29 +103,54 @@ void PoolApp::CreateTableBody() {
   friction_joint_def.localAnchorB = temp_vec;
   friction_joint_def.bodyA = cue_ball_.GetBall();
   friction_joint_def.bodyB = table_body;
-  friction_joint_def.maxForce = 0.8f;
+  friction_joint_def.maxForce = 0.7f;
   friction_joint_def.maxTorque = 0;
 
   pool_world_->CreateJoint(&friction_joint_def);
 
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < 3; ++i) {
     friction_joint_def.bodyA = object_balls_.GetBall(i);
     pool_world_->CreateJoint(&friction_joint_def);
   }
 }
 
 void PoolApp::DrawPoolTable() const {
-  const cinder::vec2 center = getWindowCenter();
-  const float table_x1 = center.x - 600;
-  const float table_x2 = center.x + 600;
-  const float table_y1 = center.y - 300;
-  const float table_y2 = center.y + 300;
+  cinder::vec2 center = getWindowCenter();
+  float table_x1 = center.x - 600;
+  float table_x2 = center.x + 600;
+  float table_y1 = center.y - 300;
+  float table_y2 = center.y + 300;
+
+  cinder::gl::color(0.486f, 0.341f, 0.169f);
+  cinder::gl::drawSolidRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f, table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
+  cinder::gl::color(1, 1, 1);
+  cinder::gl::drawStrokedRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f, table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
 
   cinder::gl::color(0.039f, 0.424f, 0.012f);
   cinder::gl::drawSolidRect(Rectf(table_x1, table_y1, table_x2, table_y2));
   cinder::gl::color(1, 1, 1);
   cinder::gl::drawStrokedRect(Rectf(table_x1, table_y1, table_x2, table_y2), 5);
 
+  cinder::vec2 circle_center;
+  for (int i = 0; i < 6; ++i) {
+    if (i == 0) {
+      circle_center = {table_x1 + 5, table_y1 + 5};
+    } else if (i == 1) {
+      circle_center = {getWindowCenter().x, table_y1 + 5};
+    } else if (i == 2) {
+      circle_center = {table_x2 - 5, table_y1 + 5};
+    } else if (i == 3) {
+      circle_center = {table_x1 + 5, table_y2 - 5};
+    } else if (i == 4) {
+      circle_center = {getWindowCenter().x, table_y2 - 5};
+    } else {
+      circle_center = {table_x2 - 5, table_y2 - 5};
+    }
+    cinder::gl::color(0, 0, 0);
+    cinder::gl::drawSolidCircle(circle_center, 25.0f);
+    cinder::gl::color(1, 1, 1);
+    cinder::gl::drawStrokedCircle(circle_center, 25.0f, 3.0f);
+  }
 }
 
 void PoolApp::DrawPoolBalls() const {
@@ -134,7 +161,7 @@ void PoolApp::DrawPoolBalls() const {
   cinder::gl::color(1.0f, 1.0f, 1.0f);
   cinder::gl::drawSolidCircle(center, 17.0f);
 
-  for (int i = 0; i < 1; ++i) {
+  for (int i = 0; i < 3; ++i) {
     x = object_balls_.GetBall(i)->GetPosition().x;
     y = object_balls_.GetBall(i)->GetPosition().y;
     center = {x, y};
@@ -143,15 +170,7 @@ void PoolApp::DrawPoolBalls() const {
   }
 }
 
-void PoolApp::keyDown(KeyEvent event) {
-  if (event.getCode() == KeyEvent::KEY_SPACE) {
-    b2Vec2 force(0.0f, 10000.0f);
-    cue_ball_.GetBall()->ApplyForce(force, cue_ball_.GetBall()->GetPosition());
-  } else if (event.getCode() == KeyEvent::KEY_LSHIFT) {
-    b2Vec2 force(-8000.0f, 6000.0f);
-    cue_ball_.GetBall()->ApplyForce(force, cue_ball_.GetBall()->GetPosition());
-  }
-}
+void PoolApp::keyDown(KeyEvent event) {}
 
 void PoolApp::mouseDown(MouseEvent event) {
   if (event.isLeftDown()) {

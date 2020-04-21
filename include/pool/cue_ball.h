@@ -6,7 +6,6 @@
 namespace pool {
 
 class CueBall {
-  const float kForceFactor = 5000.0f;
 
  public:
   void Move(float force_x, float force_y);

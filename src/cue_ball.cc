@@ -6,8 +6,8 @@
 namespace pool {
 
 void CueBall::Move(float force_x, float force_y) {
-  b2Vec2 force(kForceFactor * force_x, kForceFactor * force_y);
-  cue_ball_->ApplyForce(force, cue_ball_->GetPosition());
+  b2Vec2 force(-force_x, -force_y);
+  cue_ball_->ApplyLinearImpulse(force, cue_ball_->GetPosition());
 }
 
 b2Body* CueBall::GetBall() const {
