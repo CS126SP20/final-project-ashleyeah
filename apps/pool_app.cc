@@ -15,6 +15,8 @@ using cinder::Rectf;
 using cinder::app::KeyEvent;
 using cinder::app::MouseEvent;
 
+const int kCueBall = 0;
+
 PoolApp::PoolApp() {}
 
 void PoolApp::setup() {
@@ -22,25 +24,12 @@ void PoolApp::setup() {
   gravity.Set(0.0f, 0.0f);
   pool_world_ = new b2World(gravity);
 
-  b2BodyDef body_def;
-  body_def.type = b2_dynamicBody;
-  body_def.position.Set(getWindowCenter().x - 200, getWindowCenter().y);
+  pool_balls_.CreateBall(pool_world_, getWindowCenter().x - 200, getWindowCenter().y, kCueBall);
 
-  cue_ball_.SetBall(pool_world_->CreateBody(&body_def));
-
-  b2CircleShape ballShape;
-  ballShape.m_p.Set(0, 0);
-  ballShape.m_radius = 17.0f;
-
-  b2FixtureDef fixture_def;
-  fixture_def.shape = &ballShape;
-  fixture_def.restitution = 1.0f;
-  cue_ball_.GetBall()->CreateFixture(&fixture_def);
-
-  for (int i = 0; i < 3; ++i) {
-    body_def.position.Set(getWindowCenter().x + 200, getWindowCenter().y - 25.5 + (i * 17));
-    object_balls_.AddBall(pool_world_->CreateBody(&body_def));
-    object_balls_.GetBall(i)->CreateFixture(&fixture_def);
+  for (int i = 1; i < 4; ++i) {
+    float pos_x = getWindowCenter().x + 200;
+    float pos_y = getWindowCenter().y - 25.5 + ((i - 1) * 17);
+    pool_balls_.CreateBall(pool_world_, pos_x, pos_y, i);
   }
 
   CreateTableBody();
@@ -101,15 +90,15 @@ void PoolApp::CreateTableBody() {
   b2FrictionJointDef friction_joint_def;
   friction_joint_def.localAnchorA = temp_vec;
   friction_joint_def.localAnchorB = temp_vec;
-  friction_joint_def.bodyA = cue_ball_.GetBall();
+  friction_joint_def.bodyA = pool_balls_.GetBall(kCueBall);
   friction_joint_def.bodyB = table_body;
   friction_joint_def.maxForce = 0.7f;
   friction_joint_def.maxTorque = 0;
 
   pool_world_->CreateJoint(&friction_joint_def);
 
-  for (int i = 0; i < 3; ++i) {
-    friction_joint_def.bodyA = object_balls_.GetBall(i);
+  for (int i = 1; i < 4; ++i) {
+    friction_joint_def.bodyA = pool_balls_.GetBall(i);
     pool_world_->CreateJoint(&friction_joint_def);
   }
 }
@@ -122,9 +111,11 @@ void PoolApp::DrawPoolTable() const {
   float table_y2 = center.y + 300;
 
   cinder::gl::color(0.486f, 0.341f, 0.169f);
-  cinder::gl::drawSolidRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f, table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
+  cinder::gl::drawSolidRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f,
+      table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
   cinder::gl::color(1, 1, 1);
-  cinder::gl::drawStrokedRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f, table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
+  cinder::gl::drawStrokedRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f,
+      table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
 
   cinder::gl::color(0.039f, 0.424f, 0.012f);
   cinder::gl::drawSolidRect(Rectf(table_x1, table_y1, table_x2, table_y2));
@@ -154,16 +145,16 @@ void PoolApp::DrawPoolTable() const {
 }
 
 void PoolApp::DrawPoolBalls() const {
-  float x = cue_ball_.GetBall()->GetPosition().x;
-  float y = cue_ball_.GetBall()->GetPosition().y;
+  float x = pool_balls_.GetBall(kCueBall)->GetPosition().x;
+  float y = pool_balls_.GetBall(kCueBall)->GetPosition().y;
   cinder::vec2 center = {x, y};
 
   cinder::gl::color(1.0f, 1.0f, 1.0f);
   cinder::gl::drawSolidCircle(center, 17.0f);
 
-  for (int i = 0; i < 3; ++i) {
-    x = object_balls_.GetBall(i)->GetPosition().x;
-    y = object_balls_.GetBall(i)->GetPosition().y;
+  for (int i = 1; i < 4; ++i) {
+    x = pool_balls_.GetBall(i)->GetPosition().x;
+    y = pool_balls_.GetBall(i)->GetPosition().y;
     center = {x, y};
     cinder::gl::color(1.0f, 0.0f, 0.0f);
     cinder::gl::drawSolidCircle(center, 17.0f);
@@ -174,9 +165,9 @@ void PoolApp::keyDown(KeyEvent event) {}
 
 void PoolApp::mouseDown(MouseEvent event) {
   if (event.isLeftDown()) {
-    float force_x = static_cast<float>(event.getX()) - cue_ball_.GetBall()->GetPosition().x;
-    float force_y = static_cast<float>(event.getY()) - cue_ball_.GetBall()->GetPosition().y;
-    cue_ball_.Move(force_x, force_y);
+    float force_x = static_cast<float>(event.getX()) - pool_balls_.GetBall(kCueBall)->GetPosition().x;
+    float force_y = static_cast<float>(event.getY()) - pool_balls_.GetBall(kCueBall)->GetPosition().y;
+    pool_balls_.MoveCue(force_x, force_y);
   }
 }
 

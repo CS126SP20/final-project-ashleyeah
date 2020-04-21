@@ -3,10 +3,9 @@
 #ifndef FINALPROJECT_APPS_POOL_APP_H_
 #define FINALPROJECT_APPS_POOL_APP_H_
 
-#include <cinder/app/App.h>
 #include <Box2D/Box2D.h>
-#include <pool/cue_ball.h>
-#include <pool/object_balls.h>
+#include <cinder/app/App.h>
+#include <pool/pool_balls.h>
 
 namespace poolapp {
 
@@ -31,8 +30,7 @@ class PoolApp : public cinder::app::App {
 
  private:
   b2World* pool_world_;
-  pool::CueBall cue_ball_;
-  pool::ObjectBalls object_balls_;
+  pool::PoolBalls pool_balls_;
 };
 
 }  // namespace pool
