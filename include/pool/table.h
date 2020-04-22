@@ -8,11 +8,13 @@ namespace pool {
 
 class Table {
  public:
-  void CreateTable(b2World* pool_world, float pos_x, float pos_y);
+  void CreateTable(b2World* pool_world, float center_x, float center_y);
   b2Body* GetTableBody() const;
  private:
-  b2Body* top_edge_;
-  b2Body* bottom_edge_;
+  b2Body* top_edge1_;
+  b2Body* top_edge2_;
+  b2Body* bottom_edge1_;
+  b2Body* bottom_edge2_;
   b2Body* left_edge_;
   b2Body* right_edge_;
   b2Body* table_body_;

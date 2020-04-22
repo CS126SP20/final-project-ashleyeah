@@ -3,6 +3,7 @@
 #ifndef FINALPROJECT_INCLUDE_POOL_POOL_BALLS_H_
 #define FINALPROJECT_INCLUDE_POOL_POOL_BALLS_H_
 
+#include <Box2D/Box2D.h>
 #include <map>
 
 namespace pool {

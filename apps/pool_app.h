@@ -31,7 +31,7 @@ class PoolApp : public cinder::app::App {
  private:
   b2World* pool_world_;
   pool::PoolBalls pool_balls_;
-  pool::Table table_;
+  pool::Table table_{};
 
 };
 
