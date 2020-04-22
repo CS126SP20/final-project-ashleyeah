@@ -9,14 +9,13 @@ namespace pool {
 
 using std::map;
 
-class PoolBalls {
-  float kBallRadius = 17.0f;
+const float kBallRadius = 14.0f;
 
+class PoolBalls {
  public:
   void CreateBall(b2World* pool_world, float pos_x, float pos_y, int ball_type);
   void MoveCue(float force_x, float force_y);
   b2Body* GetBall(int key) const;
-  void SetBall(b2Body* ball, int key);
 
  private:
   map<int, b2Body*> pool_balls_;

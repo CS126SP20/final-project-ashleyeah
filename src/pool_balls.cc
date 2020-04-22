@@ -34,8 +34,4 @@ b2Body* PoolBalls::GetBall(int key) const {
   return pool_balls_.at(key);
 }
 
-void PoolBalls::SetBall(b2Body* ball, int key) {
-  pool_balls_.at(key) = ball;
-}
-
 }

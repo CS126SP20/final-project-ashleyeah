@@ -17,7 +17,7 @@ const int kHeight = 1100;
 
 void SetUp(App::Settings* settings) {
   settings->setWindowSize(kWidth, kHeight);
-  settings->setTitle("My CS 126 Application");
+  settings->setTitle("8-ball Pool");
 }
 
 }  // namespace poolapp

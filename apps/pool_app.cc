@@ -1,4 +1,4 @@
-// Copyright (c) 2020 [Your Name]. All rights reserved.
+// Copyright (c) 2020 Ashley Yeah. All rights reserved.
 
 #include "pool_app.h"
 
@@ -7,6 +7,7 @@
 #include <cinder/app/App.h>
 #include <cinder/gl/draw.h>
 #include <cinder/gl/gl.h>
+#include <pool/pool_balls.h>
 
 namespace poolapp {
 
@@ -17,22 +18,23 @@ using cinder::app::MouseEvent;
 
 const int kCueBall = 0;
 
-PoolApp::PoolApp() {}
-
-void PoolApp::setup() {
+PoolApp::PoolApp() {
   b2Vec2 gravity;
   gravity.Set(0.0f, 0.0f);
   pool_world_ = new b2World(gravity);
+}
 
+void PoolApp::setup() {
   pool_balls_.CreateBall(pool_world_, getWindowCenter().x - 200, getWindowCenter().y, kCueBall);
 
   for (int i = 1; i < 4; ++i) {
     float pos_x = getWindowCenter().x + 200;
-    float pos_y = getWindowCenter().y - 25.5 + ((i - 1) * 17);
+    float pos_y = getWindowCenter().y - (1.5 * pool::kBallRadius) + ((i - 1) * pool::kBallRadius);
     pool_balls_.CreateBall(pool_world_, pos_x, pos_y, i);
   }
 
-  CreateTableBody();
+  table_.CreateTable(pool_world_, getWindowCenter().x, getWindowCenter().y);
+  CreateFriction();
 }
 
 void PoolApp::update() {
@@ -47,51 +49,13 @@ void PoolApp::draw() {
   DrawPoolBalls();
 }
 
-void PoolApp::CreateTableBody() {
-  b2BodyDef body_def;
-  body_def.type = b2_kinematicBody;
-
-  body_def.position.Set(getWindowCenter().x - 600, getWindowCenter().y - 300);
-  b2Body* bottom_edge = pool_world_->CreateBody(&body_def);
-  b2Body* left_edge = pool_world_->CreateBody(&body_def);
-
-  body_def.position.Set( getWindowCenter().x - 600, getWindowCenter().y + 300);
-  b2Body* top_edge = pool_world_->CreateBody(&body_def);
-
-  body_def.position.Set( getWindowCenter().x + 600, getWindowCenter().y - 300);
-  b2Body* right_edge = pool_world_->CreateBody(&body_def);
-
-  body_def.position.Set(getWindowCenter().x - 600, getWindowCenter().y - 300);
-  b2Body* table_body = pool_world_->CreateBody(&body_def);
-
-  b2PolygonShape edge_x;
-  b2PolygonShape edge_y;
-  b2PolygonShape table_box;
-
-  edge_x.SetAsBox(5.0f, 600.0f);
-  edge_y.SetAsBox( 1200.0f, 5.0f );
-  table_box.SetAsBox(1200.0f, 600.0f);
-
-  b2FixtureDef fixture_def;
-  fixture_def.shape = &edge_x;
-  left_edge->CreateFixture(&fixture_def);
-  right_edge->CreateFixture(&fixture_def);
-
-  fixture_def.shape = &edge_y;
-  top_edge->CreateFixture(&fixture_def);
-  bottom_edge->CreateFixture(&fixture_def);
-
-  fixture_def.shape = &table_box;
-  fixture_def.isSensor = true;
-  fixture_def.friction = 1.0f;
-  table_body->CreateFixture(&fixture_def);
-
+void PoolApp::CreateFriction() {
   b2Vec2 temp_vec(0.0f, 0.0f);
   b2FrictionJointDef friction_joint_def;
   friction_joint_def.localAnchorA = temp_vec;
   friction_joint_def.localAnchorB = temp_vec;
   friction_joint_def.bodyA = pool_balls_.GetBall(kCueBall);
-  friction_joint_def.bodyB = table_body;
+  friction_joint_def.bodyB = table_.GetTableBody();
   friction_joint_def.maxForce = 0.7f;
   friction_joint_def.maxTorque = 0;
 
@@ -111,11 +75,11 @@ void PoolApp::DrawPoolTable() const {
   float table_y2 = center.y + 300;
 
   cinder::gl::color(0.486f, 0.341f, 0.169f);
-  cinder::gl::drawSolidRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f,
-      table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
+  cinder::gl::drawSolidRoundedRect(Rectf(table_x1 - 42.0f, table_y1 - 42.0f,
+      table_x2 + 42.0f, table_y2 + 42.0f), 20.0f);
   cinder::gl::color(1, 1, 1);
-  cinder::gl::drawStrokedRoundedRect(Rectf(table_x1 - 35.0f, table_y1 - 35.0f,
-      table_x2 + 35.0f, table_y2 + 35.0f), 20.0f);
+  cinder::gl::drawStrokedRoundedRect(Rectf(table_x1 - 42.0f, table_y1 - 42.0f,
+      table_x2 + 42.0f, table_y2 + 42.0f), 20.0f);
 
   cinder::gl::color(0.039f, 0.424f, 0.012f);
   cinder::gl::drawSolidRect(Rectf(table_x1, table_y1, table_x2, table_y2));
@@ -125,17 +89,17 @@ void PoolApp::DrawPoolTable() const {
   cinder::vec2 circle_center;
   for (int i = 0; i < 6; ++i) {
     if (i == 0) {
-      circle_center = {table_x1 + 5, table_y1 + 5};
+      circle_center = {table_x1, table_y1};
     } else if (i == 1) {
-      circle_center = {getWindowCenter().x, table_y1 + 5};
+      circle_center = {getWindowCenter().x, table_y1 - 5};
     } else if (i == 2) {
-      circle_center = {table_x2 - 5, table_y1 + 5};
+      circle_center = {table_x2, table_y1};
     } else if (i == 3) {
-      circle_center = {table_x1 + 5, table_y2 - 5};
+      circle_center = {table_x1, table_y2};
     } else if (i == 4) {
-      circle_center = {getWindowCenter().x, table_y2 - 5};
+      circle_center = {getWindowCenter().x, table_y2 + 5};
     } else {
-      circle_center = {table_x2 - 5, table_y2 - 5};
+      circle_center = {table_x2, table_y2};
     }
     cinder::gl::color(0, 0, 0);
     cinder::gl::drawSolidCircle(circle_center, 25.0f);
@@ -150,18 +114,16 @@ void PoolApp::DrawPoolBalls() const {
   cinder::vec2 center = {x, y};
 
   cinder::gl::color(1.0f, 1.0f, 1.0f);
-  cinder::gl::drawSolidCircle(center, 17.0f);
+  cinder::gl::drawSolidCircle(center, pool::kBallRadius);
 
   for (int i = 1; i < 4; ++i) {
     x = pool_balls_.GetBall(i)->GetPosition().x;
     y = pool_balls_.GetBall(i)->GetPosition().y;
     center = {x, y};
     cinder::gl::color(1.0f, 0.0f, 0.0f);
-    cinder::gl::drawSolidCircle(center, 17.0f);
+    cinder::gl::drawSolidCircle(center, pool::kBallRadius);
   }
 }
-
-void PoolApp::keyDown(KeyEvent event) {}
 
 void PoolApp::mouseDown(MouseEvent event) {
   if (event.isLeftDown()) {

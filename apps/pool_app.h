@@ -6,6 +6,7 @@
 #include <Box2D/Box2D.h>
 #include <cinder/app/App.h>
 #include <pool/pool_balls.h>
+#include <pool/table.h>
 
 namespace poolapp {
 
@@ -20,17 +21,18 @@ class PoolApp : public cinder::app::App {
   void setup() override;
   void update() override;
   void draw() override;
-  void keyDown(cinder::app::KeyEvent) override;
   void mouseDown(cinder::app::MouseEvent) override;
 
  private:
-  void CreateTableBody();
+  void CreateFriction();
   void DrawPoolTable() const;
   void DrawPoolBalls() const;
 
  private:
   b2World* pool_world_;
   pool::PoolBalls pool_balls_;
+  pool::Table table_;
+
 };
 
 }  // namespace pool
