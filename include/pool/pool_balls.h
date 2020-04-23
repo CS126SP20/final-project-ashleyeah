@@ -17,6 +17,8 @@ class PoolBalls {
   void CreateBall(b2World* pool_world, float pos_x, float pos_y, int ball_type);
   void MoveCue(float force_x, float force_y);
   b2Body* GetBall(int key) const;
+  map<int, b2Body*> GetBalls() const;
+  void RemoveBall(int key);
 
  private:
   map<int, b2Body*> pool_balls_;

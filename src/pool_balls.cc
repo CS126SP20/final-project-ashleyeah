@@ -34,4 +34,12 @@ b2Body* PoolBalls::GetBall(int key) const {
   return pool_balls_.at(key);
 }
 
+map<int, b2Body*> PoolBalls::GetBalls() const {
+  return pool_balls_;
+}
+
+void PoolBalls::RemoveBall(int key) {
+  pool_balls_.erase(key);
+}
+
 }

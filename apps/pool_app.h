@@ -5,6 +5,7 @@
 
 #include <Box2D/Box2D.h>
 #include <cinder/app/App.h>
+#include <pool/engine.h>
 #include <pool/pool_balls.h>
 #include <pool/table.h>
 
@@ -31,7 +32,8 @@ class PoolApp : public cinder::app::App {
  private:
   b2World* pool_world_;
   pool::PoolBalls pool_balls_;
-  pool::Table table_{};
+  pool::Table table_;
+  pool::Engine engine_;
 
 };
 

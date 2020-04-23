@@ -6,6 +6,8 @@
 
 namespace pool {
 
+const float kPocketRadius = 25.0f;
+
 class Table {
  public:
   void CreateTable(b2World* pool_world, float center_x, float center_y);

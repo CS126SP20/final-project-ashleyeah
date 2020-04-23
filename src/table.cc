@@ -5,8 +5,6 @@
 
 namespace pool {
 
-const float kPocketRadius = 25.0f;
-
 void Table::CreateTable(b2World *pool_world, float center_x, float center_y) {
   b2BodyDef body_def;
   body_def.type = b2_kinematicBody;
