@@ -15,7 +15,7 @@ const float kBallRadius = 14.0f;
 class PoolBalls {
  public:
   void CreateBall(b2World* pool_world, float pos_x, float pos_y, int ball_type);
-  void MoveCue(float force_x, float force_y);
+  void MoveCue(b2Vec2 force);
   b2Body* GetBall(int key) const;
   map<int, b2Body*> GetBalls() const;
   void RemoveBall(int key);

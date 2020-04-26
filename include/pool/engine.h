@@ -13,8 +13,8 @@ using std::vector;
 
 class Engine {
  public:
-  void SetPocketLocations(vector<cinder::vec2> pocket_pos);
-  bool Pocketed(b2Body* ball);
+  Engine(vector<cinder::vec2> pocket_pos);
+  bool Pocketed(b2Body* ball) const;
 
  private:
   vector<cinder::vec2> pocket_pos_;

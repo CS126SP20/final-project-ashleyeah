@@ -10,7 +10,7 @@ const float kPocketRadius = 25.0f;
 
 class Table {
  public:
-  void CreateTable(b2World* pool_world, float center_x, float center_y);
+  Table(b2World* pool_world, float center_x, float center_y);
   b2Body* GetTableBody() const;
  private:
   b2Body* top_edge1_;

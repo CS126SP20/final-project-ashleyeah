@@ -5,6 +5,7 @@
 
 #include <Box2D/Box2D.h>
 #include <cinder/app/App.h>
+#include <pool/cue.h>
 #include <pool/engine.h>
 #include <pool/pool_balls.h>
 #include <pool/table.h>
@@ -16,6 +17,13 @@ using cinder::Rectf;
 using cinder::app::MouseEvent;
 using std::vector;
 
+enum class GameState {
+  kSetup,
+  kPlaying,
+  kFoul,
+  kGameOver,
+};
+
 class PoolApp : public cinder::app::App {
  public:
   PoolApp();
@@ -23,17 +31,23 @@ class PoolApp : public cinder::app::App {
   void update() override;
   void draw() override;
   void mouseDown(cinder::app::MouseEvent) override;
+  void mouseDrag(cinder::app::MouseEvent) override;
+  void mouseUp(cinder::app::MouseEvent) override;
 
  private:
   void CreateFriction();
   void DrawPoolTable() const;
   void DrawPoolBalls() const;
+  void DrawCueStick() const;
 
  private:
   b2World* pool_world_;
+  bool player1_;
   pool::PoolBalls pool_balls_;
   pool::Table table_;
+  pool::Cue cue_stick_;
   pool::Engine engine_;
+  GameState state_;
 
 };
 

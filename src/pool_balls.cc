@@ -24,8 +24,7 @@ void PoolBalls::CreateBall(b2World* pool_world, float pos_x, float pos_y, int ba
   pool_balls_.emplace(ball_type, ball);
 }
 
-void PoolBalls::MoveCue(float force_x, float force_y) {
-  b2Vec2 force(-force_x, -force_y);
+void PoolBalls::MoveCue(b2Vec2 force) {
   b2Body* cue_ball = pool_balls_.at(0);
   cue_ball->ApplyLinearImpulse(force, cue_ball->GetPosition());
 }
@@ -39,7 +38,9 @@ map<int, b2Body*> PoolBalls::GetBalls() const {
 }
 
 void PoolBalls::RemoveBall(int key) {
+  b2Body* temp = pool_balls_.at(key);
   pool_balls_.erase(key);
+  temp->GetWorld()->DestroyBody(temp);
 }
 
 }

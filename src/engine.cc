@@ -13,11 +13,11 @@ float CalculateDistance(float x1, float x2, float y1, float y2) {
   return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
 
-void Engine::SetPocketLocations(vector<cinder::vec2> pocket_pos) {
+Engine::Engine(vector<cinder::vec2> pocket_pos) {
   pocket_pos_ = std::move(pocket_pos);
 }
 
-bool Engine::Pocketed(b2Body* ball) {
+bool Engine::Pocketed(b2Body* ball) const {
   float ball_x = ball->GetPosition().x;
   float ball_y = ball->GetPosition().y;
   for (auto & pos : pocket_pos_) {

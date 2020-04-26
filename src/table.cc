@@ -5,10 +5,9 @@
 
 namespace pool {
 
-void Table::CreateTable(b2World *pool_world, float center_x, float center_y) {
+Table::Table(b2World *pool_world, float center_x, float center_y) {
   b2BodyDef body_def;
   body_def.type = b2_kinematicBody;
-
 
   body_def.position.Set(center_x - 300, center_y - 300);
   bottom_edge1_ = pool_world->CreateBody(&body_def);
