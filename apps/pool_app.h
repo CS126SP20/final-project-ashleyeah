@@ -19,7 +19,8 @@ using std::vector;
 
 enum class GameState {
   kSetup,
-  kPlaying,
+  kInProgress,
+  kTurnDone,
   kFoul,
   kGameOver,
 };
@@ -36,9 +37,12 @@ class PoolApp : public cinder::app::App {
 
  private:
   void CreateFriction();
+  bool BodyMoving();
+  void TransformCueStick(b2Vec2 mouse_pos);
   void DrawPoolTable() const;
   void DrawPoolBalls() const;
   void DrawCueStick() const;
+  void DrawHelpRay() const;
 
  private:
   b2World* pool_world_;

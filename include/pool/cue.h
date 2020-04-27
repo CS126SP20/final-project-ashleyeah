@@ -13,9 +13,12 @@ class Cue {
  public:
   Cue(b2World* pool_world, float center_x, float center_y);
   b2Body* GetStick() const;
+  b2Body* GetRay() const;
   void Transform(b2Vec2 pos, float angle);
+  void SetProjectionRay(b2Vec2 pos, float angle);
  private:
   b2Body* cue_stick_;
+  b2Body* project_ray_;
 };
 
 }

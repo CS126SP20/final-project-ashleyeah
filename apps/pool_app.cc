@@ -36,7 +36,7 @@ PoolApp::PoolApp()
               {getWindowCenter().x - kHalfWidth, getWindowCenter().y + kHalfHeight},
               {getWindowCenter().x, getWindowCenter().y + kHalfHeight},
               {getWindowCenter().x + kHalfWidth, getWindowCenter().y + kHalfHeight}}} ,
-    state_{GameState::kSetup},
+    state_{GameState::kTurnDone},
     player1_{true} {}
 
 void PoolApp::setup() {
@@ -54,8 +54,8 @@ void PoolApp::setup() {
 }
 
 void PoolApp::update() {
-  for( int i = 0; i < 8; ++i ) {
-    pool_world_->Step( 1 / 30.0f, 1, 1 );
+  for( int i = 0; i < 9; ++i ) {
+    pool_world_->Step( 1 / 30.0f, 1, 1);
   }
   for (auto ball : pool_balls_.GetBalls()) {
     if (ball.first == kCueBall) {
@@ -68,12 +68,18 @@ void PoolApp::update() {
       pool_balls_.RemoveBall(ball.first);
     }
   }
+  if (!BodyMoving()) {
+    state_ = GameState::kSetup;
+  }
 }
 
 void PoolApp::draw() {
   cinder::gl::clear();
   DrawPoolTable();
   DrawPoolBalls();
+  if (state_ == GameState::kSetup) {
+    DrawHelpRay();
+  }
   DrawCueStick();
 }
 
@@ -89,6 +95,37 @@ void PoolApp::CreateFriction() {
     friction_joint_def.maxTorque = 0;
     pool_world_->CreateJoint(&friction_joint_def);
   }
+}
+
+bool PoolApp::BodyMoving() {
+  for (auto ball : pool_balls_.GetBalls()) {
+    if (!(ball.second->GetLinearVelocity() == b2Vec2_zero)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void PoolApp::TransformCueStick(b2Vec2 mouse_pos) {
+  b2Vec2 ball_pos = pool_balls_.GetBall(kCueBall)->GetPosition();
+  b2Vec2 adjust_pos = mouse_pos - ball_pos;
+  float angle = atan(adjust_pos.y/adjust_pos.x);
+  float length = adjust_pos.Length() - 2 * pool::kBallRadius;
+  if (length > 175.0f) {
+    length = 175.0f;
+  } else if (length < pool::kBallRadius + 1.0f) {
+    length = pool::kBallRadius + 1.0f;
+  }
+  length += pool::kCueHalfLength;
+  adjust_pos.Normalize();
+  adjust_pos *= length;
+  ball_pos += adjust_pos;
+  cue_stick_.Transform(ball_pos, angle);
+
+  adjust_pos.Normalize();
+  adjust_pos *= -3 * pool::kCueHalfLength;
+  adjust_pos += ball_pos;
+  cue_stick_.SetProjectionRay(adjust_pos, angle);
 }
 
 void PoolApp::DrawPoolTable() const {
@@ -180,44 +217,50 @@ void PoolApp::DrawCueStick() const {
   cinder::gl::popModelMatrix();
 }
 
+void PoolApp::DrawHelpRay() const {
+  cinder::gl::color(1.0f, 1.0f, 1.0f);
+  cinder::gl::pushModelMatrix();
+  cinder::gl::translate({cue_stick_.GetRay()->GetPosition().x,
+                         cue_stick_.GetRay()->GetPosition().y});
+  float angle = cue_stick_.GetRay()->GetAngle();
+  cinder::gl::rotate(angle);
+  cinder::gl::drawLine(cinder::vec2((-3 * pool::kCueHalfLength), 0.0f),
+      cinder::vec2((3 * pool::kCueHalfLength), 0.0f));
+  cinder::gl::popModelMatrix();
+}
+
 void PoolApp::mouseDown(MouseEvent event) {
+  if (event.isLeftDown() && state_ == GameState::kSetup) {
+    b2Vec2 mouse_pos(event.getX(), event.getY());
+    TransformCueStick(mouse_pos);
+  }
 }
 
 void PoolApp::mouseDrag(MouseEvent event) {
   if (event.isLeftDown() && state_ == GameState::kSetup) {
     b2Vec2 mouse_pos(event.getX(), event.getY());
-    b2Vec2 ball_pos = pool_balls_.GetBall(kCueBall)->GetPosition();
-    b2Vec2 adjust_pos = mouse_pos - ball_pos;
-    float angle = atan(adjust_pos.y/adjust_pos.x);
-    float length = adjust_pos.Length() - 2 * pool::kBallRadius;
-    if (length > 175.0f) {
-      length = 175.0f;
-    } else if (length < pool::kBallRadius + 1.0f) {
-      length = pool::kBallRadius + 1.0f;
-    }
-    length += pool::kCueHalfLength;
-    adjust_pos.Normalize();
-    adjust_pos *= length;
-    adjust_pos += ball_pos;
-    cue_stick_.Transform(adjust_pos, angle);
+    TransformCueStick(mouse_pos);
   }
 }
 
 void PoolApp::mouseUp(MouseEvent event) {
   if (event.isLeft() && state_ == GameState::kSetup) {
-    cue_stick_.Transform(
-        b2Vec2(getWindowCenter().x, getWindowCenter().y - 400), 0);
     b2Vec2 mouse_pos(event.getX(), event.getY());
+    cue_stick_.Transform(
+        b2Vec2(getWindowCenter().x, getWindowCenter().y - 400), 0.0f);
+    cue_stick_.SetProjectionRay(b2Vec2(getWindowCenter().x, -100.0f), 0.0f);
     b2Vec2 force = pool_balls_.GetBall(kCueBall)->GetPosition() - mouse_pos;
-    float length = force.Length() - 2 * pool::kBallRadius;
-    if (length > 175.0f) {
-      length = 175.0f;
-    } else if (length < pool::kBallRadius + 1.0f) {
-      length = pool::kBallRadius + 1.0f;
+    float strength = force.Length() - 2 * pool::kBallRadius;
+    if (strength > 200.0f) {
+      strength = 200.0f;
+    } else if (strength < pool::kBallRadius + 6.0f) {
+      strength = pool::kBallRadius + 6.0f;
     }
-    length -= pool::kBallRadius;
-    force *= length / 8;
+    strength -= pool::kBallRadius + 5.0f;
+    force.Normalize();
+    force *= strength;
     pool_balls_.MoveCue(force);
+    state_ = GameState::kInProgress;
   }
 }
 

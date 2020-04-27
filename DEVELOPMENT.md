@@ -24,4 +24,10 @@
     - Added engine class to deal with scoring and calculating when a ball is pocketed
     
 **Week 2**
-- **4/24/20** 
+- **4/25/20** Added functionality of cue stick
+    - Added cue stick as body and figured out how to position it around the cue ball
+    - Cue stick can be used to adjust angle and power of the hitting the cue ball
+    - Continued to restructure certain parts of code in order to shorten or reduce repetitive code 
+- **4/26/20** Cue stick aiming now aided with a projection line
+    - Cue stick now has a line projecting out of its front tip which acts as a way for the player to line up their shot
+    - Fixed issues with the power of the shot and made it more accurate towards to the graphical representations

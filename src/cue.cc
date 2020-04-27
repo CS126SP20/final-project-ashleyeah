@@ -20,14 +20,27 @@ Cue::Cue(b2World* pool_world, float center_x, float center_y) {
   fixture_def.density = 1.0f;
   fixture_def.isSensor = true;
   cue_stick_->CreateFixture(&fixture_def);
+
+  b2BodyDef ray_def;
+  ray_def.position.Set(0.0f, 0.0f);
+  project_ray_ = pool_world->CreateBody(&ray_def);
 }
 
 b2Body* Cue::GetStick() const {
   return cue_stick_;
 }
 
+
+b2Body* Cue::GetRay() const {
+  return project_ray_;
+}
+
 void Cue::Transform(b2Vec2 pos, float angle) {
   cue_stick_->SetTransform(pos, angle);
+}
+
+void Cue::SetProjectionRay(b2Vec2 pos, float angle) {
+  project_ray_->SetTransform(pos, angle);
 }
 
 }
