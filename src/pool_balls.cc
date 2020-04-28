@@ -19,14 +19,16 @@ void PoolBalls::CreateBall(b2World* pool_world, float pos_x, float pos_y, int ba
   b2FixtureDef fixture_def;
   fixture_def.shape = &ballShape;
   fixture_def.restitution = 1.0f;
+  fixture_def.density = 0.05f;
   ball->CreateFixture(&fixture_def);
+  ball->SetLinearDamping(0.01f);
 
   pool_balls_.emplace(ball_type, ball);
 }
 
 void PoolBalls::MoveCue(b2Vec2 force) {
   b2Body* cue_ball = pool_balls_.at(0);
-  cue_ball->ApplyLinearImpulse(force, cue_ball->GetPosition());
+  cue_ball->SetLinearVelocity(force);
 }
 
 b2Body* PoolBalls::GetBall(int key) const {

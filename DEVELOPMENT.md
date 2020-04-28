@@ -28,6 +28,11 @@
     - Added cue stick as body and figured out how to position it around the cue ball
     - Cue stick can be used to adjust angle and power of the hitting the cue ball
     - Continued to restructure certain parts of code in order to shorten or reduce repetitive code 
+    
 - **4/26/20** Cue stick aiming now aided with a projection line
     - Cue stick now has a line projecting out of its front tip which acts as a way for the player to line up their shot
     - Fixed issues with the power of the shot and made it more accurate towards to the graphical representations
+    
+- **4/27/20** Positioned and added all 16 balls to the table
+    - Added all the pool balls, with correct colors and positioning at the beginning
+    - Tweaked with the force, friction, and density of the bodies in order to make the bodies balls bounce as accurately as possible
