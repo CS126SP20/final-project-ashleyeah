@@ -19,9 +19,9 @@ void PoolBalls::CreateBall(b2World* pool_world, float pos_x, float pos_y, int ba
   b2FixtureDef fixture_def;
   fixture_def.shape = &ballShape;
   fixture_def.restitution = 1.0f;
-  fixture_def.density = 0.05f;
+  fixture_def.density = 0.15f;
   ball->CreateFixture(&fixture_def);
-  ball->SetLinearDamping(0.01f);
+  ball->SetLinearDamping(0.015f);
 
   pool_balls_.emplace(ball_type, ball);
 }

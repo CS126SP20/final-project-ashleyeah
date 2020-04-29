@@ -9,19 +9,19 @@ Table::Table(b2World *pool_world, float center_x, float center_y) {
   b2BodyDef body_def;
   body_def.type = b2_kinematicBody;
 
-  body_def.position.Set(center_x - 300, center_y - 300);
+  body_def.position.Set(center_x - 300 + 2.5, center_y - 300);
   bottom_edge1_ = pool_world->CreateBody(&body_def);
 
-  body_def.position.Set(center_x + 300, center_y - 300);
+  body_def.position.Set(center_x + 300 - 2.5, center_y - 300);
   bottom_edge2_ = pool_world->CreateBody(&body_def);
 
   body_def.position.Set(center_x - 600, center_y);
   left_edge_ = pool_world->CreateBody(&body_def);
 
-  body_def.position.Set(center_x - 300, center_y + 300);
+  body_def.position.Set(center_x - 300 + 2.5, center_y + 300);
   top_edge1_ = pool_world->CreateBody(&body_def);
 
-  body_def.position.Set(center_x + 300, center_y + 300);
+  body_def.position.Set(center_x + 300 - 2.5, center_y + 300);
   top_edge2_ = pool_world->CreateBody(&body_def);
 
   body_def.position.Set(center_x + 600, center_y);
@@ -34,7 +34,7 @@ Table::Table(b2World *pool_world, float center_x, float center_y) {
   b2PolygonShape edge_y;
   b2PolygonShape table_box;
 
-  edge_x.SetAsBox(2.5f, 300.0f - kPocketRadius - 10);
+  edge_x.SetAsBox(2.5f, 300.0f - kPocketRadius - 12.5);
   edge_y.SetAsBox( 300.0f - kPocketRadius - 10, 2.5f );
   table_box.SetAsBox(600.0f, 300.0f);
 

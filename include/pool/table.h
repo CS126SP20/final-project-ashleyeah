@@ -6,7 +6,7 @@
 
 namespace pool {
 
-const float kPocketRadius = 25.0f;
+const float kPocketRadius = 28.0f;
 
 class Table {
  public:

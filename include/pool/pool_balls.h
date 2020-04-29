@@ -10,7 +10,7 @@ namespace pool {
 
 using std::map;
 
-const float kBallRadius = 14.0f;
+const float kBallRadius = 15.0f;
 
 class PoolBalls {
  public:

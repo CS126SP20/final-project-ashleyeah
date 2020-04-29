@@ -36,3 +36,8 @@
 - **4/27/20** Positioned and added all 16 balls to the table
     - Added all the pool balls, with correct colors and positioning at the beginning
     - Tweaked with the force, friction, and density of the bodies in order to make the bodies balls bounce as accurately as possible
+    
+- **4/28/20** Started implementing scoring system
+    - Added gflags library in order for players to decide their names in the command-line arguments
+    - Engine takes care of the players (name, score) and keeps track of progress
+    - Scoring system currently only consists of only a point to player who's corresponding ball is pocketed

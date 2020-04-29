@@ -15,6 +15,7 @@ namespace poolapp {
 using cinder::Color;
 using cinder::Rectf;
 using cinder::app::MouseEvent;
+using std::string;
 using std::vector;
 
 enum class GameState {
@@ -43,6 +44,7 @@ class PoolApp : public cinder::app::App {
   void DrawPoolBalls() const;
   void DrawCueStick() const;
   void DrawHelpRay() const;
+  void DrawText() const;
 
  private:
   b2World* pool_world_;
@@ -52,6 +54,8 @@ class PoolApp : public cinder::app::App {
   pool::Cue cue_stick_;
   pool::Engine engine_;
   GameState state_;
+  int player1_score_;
+  int player2_score_;
 
 };
 
