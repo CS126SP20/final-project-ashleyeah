@@ -26,11 +26,14 @@ class Engine {
   bool Pocketed(b2Body* ball) const;
   void IncreasePlayerScore(const string& name);
   int GetPlayerScore(const string& name) const;
+  bool PlayerTurn(const string& name) const;
+  void SwitchPlayerTurn();
 
  private:
   vector<cinder::vec2> pocket_pos_;
   map<int, b2Vec2> ball_pos_;
   map<string, int> players_;
+  bool player1_turn_;
 };
 
 }

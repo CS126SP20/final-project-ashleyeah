@@ -3,13 +3,13 @@
 #define CATCH_CONFIG_MAIN
 
 #include <catch2/catch.hpp>
-#include <cinder/Rand.h>
 #include <Box2D/Box2D.h>
 
 #include <pool/engine.h>
 #include <pool/pool_balls.h>
 
-TEST_CASE("Engine Determine Ball in Pocket") {
+// Engine Tests
+TEST_CASE("Determine Ball in Pocket", "[Engine]") {
   pool::Engine engine({900.0f, 550.0f}, "player1", "player2");
   b2World world({0.0f, 0.0f});
   b2BodyDef body_def;
@@ -29,6 +29,24 @@ TEST_CASE("Engine Determine Ball in Pocket") {
   SECTION("Ball not Pocketed") {
     ball->SetTransform({1513.0f, 276.0f}, 0.0f);
     REQUIRE(!engine.Pocketed(ball));
+  }
+}
+
+TEST_CASE("Get Player Info", "[Engine]") {
+  pool::Engine engine({900.0f, 550.0f}, "player1", "player2");
+  engine.IncreasePlayerScore("player1");
+  REQUIRE(engine.GetPlayerScore("player1") == 1);
+  REQUIRE(engine.GetPlayerScore("player2") == 0);
+}
+
+TEST_CASE("Get Player Turn", "[Engine]") {
+  pool::Engine engine({900.0f, 550.0f}, "player1", "player2");
+  SECTION("Player 1 Turn") {
+    REQUIRE(engine.PlayerTurn("player1"));
+  }
+  SECTION("Player 2 Turn") {
+    engine.SwitchPlayerTurn();
+    REQUIRE(engine.PlayerTurn("player2"));
   }
 }
 

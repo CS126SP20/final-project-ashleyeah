@@ -7,6 +7,8 @@
 namespace pool {
 
 const float kPocketRadius = 28.0f;
+const float kHalfTableWidth = 600.0f;
+const float kHalfTableHeight = 300.0f;
 
 class Table {
  public:

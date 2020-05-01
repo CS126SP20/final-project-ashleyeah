@@ -17,30 +17,45 @@ float CalculateDistance(float x1, float x2, float y1, float y2) {
 }
 
 Engine::Engine(const cinder::vec2& center, const string& player1_name, const string& player2_name) {
+
   pocket_pos_ = {{center.x - kHalfWidth, center.y - kHalfHeight},
                  {center.x, center.y - kHalfHeight},
                  {center.x + kHalfWidth, center.y - kHalfHeight},
                  {center.x - kHalfWidth, center.y + kHalfHeight},
                  {center.x, center.y + kHalfHeight},
                  {center.x + kHalfWidth, center.y + kHalfHeight}};
+
   ball_pos_ = {{0, b2Vec2(center.x - 300, center.y)},
                {1, b2Vec2(center.x + 300 - (4 * pool::kBallRadius), center.y)},
-               {2, b2Vec2(center.x + 300 - (2 * pool::kBallRadius), center.y - pool::kBallRadius)},
+               {2, b2Vec2(center.x + 300 - (2 * pool::kBallRadius),
+                   center.y - pool::kBallRadius)},
                {3, b2Vec2(center.x + 300, center.y + (2 * pool::kBallRadius))},
-               {4, b2Vec2(center.x + 300 + (2 * pool::kBallRadius), + center.y + pool::kBallRadius)},
-               {5, b2Vec2(center.x + 300 + (2 * pool::kBallRadius), + center.y - (3 * pool::kBallRadius))},
-               {6, b2Vec2(center.x + 300 + (4 * pool::kBallRadius), center.y + (4 * pool::kBallRadius))},
+               {4, b2Vec2(center.x + 300 + (2 * pool::kBallRadius),
+                   center.y + pool::kBallRadius)},
+               {5, b2Vec2(center.x + 300 + (2 * pool::kBallRadius),
+                   center.y - (3 * pool::kBallRadius))},
+               {6, b2Vec2(center.x + 300 + (4 * pool::kBallRadius),
+                   center.y + (4 * pool::kBallRadius))},
                {7, b2Vec2(center.x + 300 + (4 * pool::kBallRadius), center.y)},
                {8, b2Vec2(center.x + 300, center.y)},
-               {9, b2Vec2(center.x + 300 - (2 * pool::kBallRadius), center.y + pool::kBallRadius)},
+               {9, b2Vec2(center.x + 300 - (2 * pool::kBallRadius),
+                   center.y + pool::kBallRadius)},
                {10, b2Vec2(center.x + 300, center.y - (2 * pool::kBallRadius))},
-               {11, b2Vec2(center.x + 300 + (2 * pool::kBallRadius), + center.y + (3 * pool::kBallRadius))},
-               {12, b2Vec2(center.x + 300 + (2 * pool::kBallRadius), + center.y - pool::kBallRadius)},
-               {13, b2Vec2(center.x + 300 + (4 * pool::kBallRadius), center.y - (4 * pool::kBallRadius))},
-               {14, b2Vec2(center.x + 300 + (4 * pool::kBallRadius), center.y + (2 * pool::kBallRadius))},
-               {15, b2Vec2(center.x + 300 + (4 * pool::kBallRadius), center.y - (2 * pool::kBallRadius))},};
+               {11, b2Vec2(center.x + 300 + (2 * pool::kBallRadius),
+                   center.y + (3 * pool::kBallRadius))},
+               {12, b2Vec2(center.x + 300 + (2 * pool::kBallRadius),
+                   center.y - pool::kBallRadius)},
+               {13, b2Vec2(center.x + 300 + (4 * pool::kBallRadius),
+                   center.y - (4 * pool::kBallRadius))},
+               {14, b2Vec2(center.x + 300 + (4 * pool::kBallRadius),
+                   center.y + (2 * pool::kBallRadius))},
+               {15, b2Vec2(center.x + 300 + (4 * pool::kBallRadius),
+                   center.y - (2 * pool::kBallRadius))},};
+
   players_ = {{player1_name, 0},
               {player2_name, 0}};
+
+  player1_turn_ = true;
 }
 
 map<int, b2Vec2> Engine::GetBallPositions() {
@@ -66,6 +81,21 @@ void Engine::IncreasePlayerScore(const string& name) {
 
 int Engine::GetPlayerScore(const string& name) const {
   return players_.at(name);
+}
+
+bool Engine::PlayerTurn(const string &name) const {
+  string player1 = players_.begin()->first;
+  string player2 = players_.rbegin()->first;
+  if (name == player1) {
+    return player1_turn_;
+  } else if (name == player2) {
+    return !player1_turn_;
+  }
+  return false;
+}
+
+void Engine::SwitchPlayerTurn() {
+  player1_turn_ = !player1_turn_;
 }
 
 }

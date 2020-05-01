@@ -2,7 +2,7 @@
 
 ---
 
-**Week 1**
+**WEEK 1**
 - **4/18/20** Made basic draw method for drawing pool table 
    - [x] Need to look into how to use Box2D correctly (how to create world/bodies)
     
@@ -23,7 +23,7 @@
     - Changed table creation in order to account for openings where the pockets are
     - Added engine class to deal with scoring and calculating when a ball is pocketed
     
-**Week 2**
+**WEEK 2**
 - **4/25/20** Added functionality of cue stick
     - Added cue stick as body and figured out how to position it around the cue ball
     - Cue stick can be used to adjust angle and power of the hitting the cue ball
@@ -41,3 +41,9 @@
     - Added gflags library in order for players to decide their names in the command-line arguments
     - Engine takes care of the players (name, score) and keeps track of progress
     - Scoring system currently only consists of only a point to player who's corresponding ball is pocketed
+    
+ **4/29/20** Minor changes to game function and graphics
+    - Now allows player to change the position of the ball accordingly at the beginning of the game for the break as well as when the other player commits a foul
+    - Ball can only be moved along a line at the beginning, while after a foul, the other player can place the cue ball wherever
+    
+ **WEEK 3**

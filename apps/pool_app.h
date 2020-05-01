@@ -19,6 +19,7 @@ using std::string;
 using std::vector;
 
 enum class GameState {
+  kBeginGame,
   kSetup,
   kInProgress,
   kTurnDone,
@@ -34,29 +35,46 @@ class PoolApp : public cinder::app::App {
   void draw() override;
   void mouseDown(cinder::app::MouseEvent) override;
   void mouseDrag(cinder::app::MouseEvent) override;
+  void mouseMove(cinder::app::MouseEvent) override;
   void mouseUp(cinder::app::MouseEvent) override;
 
  private:
+
+  // Creates friction between balls and the table
   void CreateFriction();
+
+  // Determines if the play is in progress by checking if any balls are
+  // still moving
   bool BodyMoving();
+
+  // Moves the cue stick based of position of the mouse
   void TransformCueStick(b2Vec2 mouse_pos);
+
   void DrawPoolTable() const;
   void DrawPoolBalls() const;
   void DrawCueStick() const;
   void DrawHelpRay() const;
+  void DrawGuideLine() const;
   void DrawText() const;
 
  private:
+  // Box2D world containing all bodies
   b2World* pool_world_;
-  bool player1_;
-  pool::PoolBalls pool_balls_;
-  pool::Table table_;
-  pool::Cue cue_stick_;
-  pool::Engine engine_;
-  GameState state_;
-  int player1_score_;
-  int player2_score_;
 
+  // PoolBalls object that holds information about all the pool balls
+  pool::PoolBalls pool_balls_;
+
+  // Table object holds information about the table's body and surface
+  pool::Table table_;
+
+  // Cue stick object holds information about the cue stick's body
+  pool::Cue cue_stick_;
+
+  // Engine with important functions and information about positioning
+  pool::Engine engine_;
+
+  // Current state of the game
+  GameState state_;
 };
 
 }  // namespace pool
