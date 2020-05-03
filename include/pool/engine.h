@@ -5,6 +5,7 @@
 
 #include <cinder/app/App.h>
 #include <Box2D/Box2D.h>
+#include <pool/pool_balls.h>
 
 #include <vector>
 #include <string>
@@ -32,8 +33,10 @@ class Engine {
  private:
   vector<cinder::vec2> pocket_pos_;
   map<int, b2Vec2> ball_pos_;
+  string player1_name_;
+  string player2_name_;
   map<string, int> players_;
-  bool player1_turn_;
+  bool is_player1_turn_;
 };
 
 }

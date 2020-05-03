@@ -22,27 +22,32 @@ void PoolBalls::CreateBall(b2World* pool_world, float pos_x, float pos_y, int ba
   fixture_def.density = 0.15f;
   ball->CreateFixture(&fixture_def);
   ball->SetLinearDamping(0.015f);
+  auto* data = new Ball(ball_type, ball);
+  ball->SetUserData(data);
 
-  pool_balls_.emplace(ball_type, ball);
+  pool_balls_.emplace(ball_type, data);
+
+//  pool_balls_.emplace(ball_type, ball);
 }
 
 void PoolBalls::MoveCue(b2Vec2 force) {
-  b2Body* cue_ball = pool_balls_.at(0);
+  b2Body* cue_ball = pool_balls_.at(0)->GetBody();
   cue_ball->SetLinearVelocity(force);
 }
 
-b2Body* PoolBalls::GetBall(int key) const {
+Ball* PoolBalls::GetBall(int key) const {
   return pool_balls_.at(key);
 }
 
-map<int, b2Body*> PoolBalls::GetBalls() const {
+map<int, Ball*> PoolBalls::GetBalls() const {
   return pool_balls_;
 }
 
 void PoolBalls::RemoveBall(int key) {
-  b2Body* temp = pool_balls_.at(key);
+  Ball* temp = pool_balls_.at(key);
   pool_balls_.erase(key);
-  temp->GetWorld()->DestroyBody(temp);
+  delete temp;
 }
+
 
 }

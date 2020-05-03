@@ -25,7 +25,7 @@ using cinder::app::MouseEvent;
 
 const int kCueBall = 0;
 const int kEightBall = 8;
-const string kDefaultFont = "Haettenschweiler";
+const string kDefaultFont = "Product Sans";
 const ci::Color kPlayer1Color = {0.145f, 0.231f, 0.574f};
 const ci::Color kPlayer2Color = {0.910f, 0.290f, 0.153f};
 
@@ -38,38 +38,74 @@ PoolApp::PoolApp()
     table_{pool_world_, getWindowCenter().x, getWindowCenter().y},
     cue_stick_{pool_world_, getWindowCenter().x, getWindowCenter().y},
     engine_{getWindowCenter(), FLAGS_player1, FLAGS_player2} ,
-    state_{GameState::kBeginGame} {}
+    state_{GameState::kBeginGame},
+    blue_scored_{false},
+    orange_scored_{false} {}
 
 void PoolApp::setup() {
+  pool_world_->SetContactListener(&contact_);
   for (auto pos : engine_.GetBallPositions()) {
     pool_balls_.CreateBall(pool_world_, pos.second.x, pos.second.y, pos.first);
   }
-  pool_balls_.GetBall(kCueBall)->GetFixtureList()->SetDensity(1.0f);
   CreateFriction();
 }
 
 void PoolApp::update() {
+
   for (int i = 0; i < 10; ++i) {
     pool_world_->Step( 1 / 30.0f, 1, 1);
   }
+
+
   for (auto ball : pool_balls_.GetBalls()) {
-    if (ball.first == kCueBall && engine_.Pocketed(ball.second)) {
-      ball.second->SetLinearVelocity({0.0f, 0.0f});
-      state_ = GameState::kFoul;
-    } else if (ball.first == kEightBall && engine_.Pocketed(ball.second)) {
-      pool_balls_.RemoveBall(ball.first);
-      state_ = GameState::kGameOver;
-    } else if (engine_.Pocketed(ball.second)) {
-      if (ball.first < kEightBall) {
-        engine_.IncreasePlayerScore(FLAGS_player1);
-      } else if (ball.first > kEightBall) {
-        engine_.IncreasePlayerScore(FLAGS_player2);
+    if (state_ == GameState::kInProgress) {
+      if (ball.first == kCueBall && engine_.Pocketed(ball.second->GetBody())) {
+        ball.second->GetBody()->SetLinearVelocity({0.0f, 0.0f});
+        state_ = GameState::kFoul;
+      } else if (ball.first == kEightBall && engine_.Pocketed(ball.second->GetBody())) {
+        pool_balls_.RemoveBall(ball.first);
+        state_ = GameState::kGameOver;
+      } else if (engine_.Pocketed(ball.second->GetBody())) {
+        if (ball.first < kEightBall) {
+          engine_.IncreasePlayerScore(FLAGS_player1);
+          blue_scored_ = true;
+        } else if (ball.first > kEightBall) {
+          engine_.IncreasePlayerScore(FLAGS_player2);
+          orange_scored_ = true;
+        }
+        pool_balls_.RemoveBall(ball.first);
       }
-      pool_balls_.RemoveBall(ball.first);
     }
   }
-  if (state_ == GameState::kInProgress && !BodyMoving()) {
-    state_ = GameState::kSetup;
+
+  if (!BodyMoving()) {
+    if (state_ == GameState::kInProgress) {
+      state_ = GameState::kTurnDone;
+    } else if (state_ == GameState::kFoul) {
+      engine_.SwitchPlayerTurn();
+      state_ = GameState::kFoulSetup;
+    } else if (state_ == GameState::kTurnDone) {
+
+      int contact = pool_balls_.GetBall(kCueBall)->GetContact();
+
+      if (contact == kCueBall || contact == kEightBall
+        || (engine_.PlayerTurn(FLAGS_player1) && (contact > kEightBall))
+        || (engine_.PlayerTurn(FLAGS_player2) && (contact < kEightBall))) {
+        engine_.SwitchPlayerTurn();
+        state_ = GameState::kFoulSetup;
+      } else if ((engine_.PlayerTurn(FLAGS_player1) && blue_scored_)
+      || (engine_.PlayerTurn(FLAGS_player2) && orange_scored_)) {
+        blue_scored_ = false;
+        orange_scored_ = false;
+        state_ = GameState::kSetup;
+      } else {
+        engine_.SwitchPlayerTurn();
+        blue_scored_ = false;
+        orange_scored_ = false;
+        state_ = GameState::kSetup;
+      }
+      pool_balls_.GetBall(kCueBall)->ResetContact();
+    }
   }
 }
 
@@ -95,7 +131,7 @@ void PoolApp::CreateFriction() {
     b2FrictionJointDef friction_joint_def;
     friction_joint_def.localAnchorA = temp_vec;
     friction_joint_def.localAnchorB = temp_vec;
-    friction_joint_def.bodyA = ball.second;
+    friction_joint_def.bodyA = ball.second->GetBody();
     friction_joint_def.bodyB = table_.GetTableBody();
     friction_joint_def.maxForce = 10.0f;
     friction_joint_def.maxTorque = 0;
@@ -105,7 +141,7 @@ void PoolApp::CreateFriction() {
 
 bool PoolApp::BodyMoving() {
   for (auto ball : pool_balls_.GetBalls()) {
-    if (!(ball.second->GetLinearVelocity() == b2Vec2_zero)) {
+    if (!(ball.second->GetBody()->GetLinearVelocity() == b2Vec2_zero)) {
       return true;
     }
   }
@@ -113,7 +149,7 @@ bool PoolApp::BodyMoving() {
 }
 
 void PoolApp::TransformCueStick(b2Vec2 mouse_pos) {
-  b2Vec2 ball_pos = pool_balls_.GetBall(kCueBall)->GetPosition();
+  b2Vec2 ball_pos = pool_balls_.GetBall(kCueBall)->GetBody()->GetPosition();
   b2Vec2 adjust_pos = mouse_pos - ball_pos;
   float angle = atan(adjust_pos.y/adjust_pos.x);
   float length = adjust_pos.Length() - 2 * pool::kBallRadius;
@@ -190,12 +226,12 @@ void PoolApp::DrawPoolTable() const {
 
 void PoolApp::DrawPoolBalls() const {
   for (auto ball : pool_balls_.GetBalls()) {
-    float x = ball.second->GetPosition().x;
-    float y = ball.second->GetPosition().y;
+    float x = ball.second->GetBody()->GetPosition().x;
+    float y = ball.second->GetBody()->GetPosition().y;
     cinder::vec2 center = {x, y};
 
     if (ball.first == kCueBall) {
-      if (engine_.Pocketed(ball.second)) {
+      if (engine_.Pocketed(ball.second->GetBody())) {
         continue;
       }
       cinder::gl::color(1.0f, 1.0f, 1.0f);
@@ -284,11 +320,9 @@ void PoolApp::mouseDown(MouseEvent event) {
     if (state_ == GameState::kSetup) {
       TransformCueStick(mouse_pos);
     } else if (state_ == GameState::kBeginGame) {
-      int x_pos = pool_balls_.GetBall(kCueBall)->GetPosition().x;
-      pool_balls_.GetBall(kCueBall)->SetTransform(b2Vec2(x_pos, mouse_pos.y), 0);
       state_ = GameState::kSetup;
-    } else if (state_ == GameState::kFoul) {
-      pool_balls_.GetBall(kCueBall)->SetTransform(mouse_pos, 0);
+    } else if (state_ == GameState::kFoulSetup) {
+      pool_balls_.GetBall(kCueBall)->GetBody()->GetFixtureList()->SetSensor(false);
       state_ = GameState::kSetup;
     }
   }
@@ -304,7 +338,7 @@ void PoolApp::mouseDrag(MouseEvent event) {
 void PoolApp::mouseMove(MouseEvent event) {
   if (state_ == GameState::kBeginGame) {
 
-    auto x_pos = pool_balls_.GetBall(kCueBall)->GetPosition().x;
+    auto x_pos = pool_balls_.GetBall(kCueBall)->GetBody()->GetPosition().x;
     auto y_pos = static_cast<float>(event.getY());
 
     if (y_pos > (getWindowCenter().y + pool::kHalfTableHeight)
@@ -317,9 +351,11 @@ void PoolApp::mouseMove(MouseEvent event) {
           + pool::kBallRadius;
     }
 
-    pool_balls_.GetBall(kCueBall)->SetTransform(b2Vec2(x_pos, y_pos), 0);
+    pool_balls_.GetBall(kCueBall)->GetBody()->SetTransform(b2Vec2(x_pos, y_pos), 0);
 
-  } else if (state_ == GameState::kFoul) {
+  } else if (state_ == GameState::kFoulSetup && !BodyMoving()) {
+
+    pool_balls_.GetBall(kCueBall)->GetBody()->GetFixtureList()->SetSensor(true);
 
     auto x_pos = static_cast<float>(event.getX());
     auto y_pos = static_cast<float>(event.getY());
@@ -340,11 +376,11 @@ void PoolApp::mouseMove(MouseEvent event) {
           - pool::kBallRadius;
     } else if (y_pos < (getWindowCenter().y - pool::kHalfTableHeight)
       + pool::kBallRadius) {
-      y_pos = (getWindowCenter().y + pool::kHalfTableHeight)
+      y_pos = (getWindowCenter().y - pool::kHalfTableHeight)
           + pool::kBallRadius;
     }
 
-    pool_balls_.GetBall(kCueBall)->SetTransform(b2Vec2(x_pos, y_pos), 0);
+    pool_balls_.GetBall(kCueBall)->GetBody()->SetTransform(b2Vec2(x_pos, y_pos), 0);
   }
 }
 
@@ -354,7 +390,7 @@ void PoolApp::mouseUp(MouseEvent event) {
     cue_stick_.Transform(
         b2Vec2(getWindowCenter().x, getWindowCenter().y - 400), 0.0f);
     cue_stick_.SetProjectionRay(b2Vec2(getWindowCenter().x, -100.0f), 0.0f);
-    b2Vec2 force = pool_balls_.GetBall(kCueBall)->GetPosition() - mouse_pos;
+    b2Vec2 force = pool_balls_.GetBall(kCueBall)->GetBody()->GetPosition() - mouse_pos;
     float strength = force.Length() - 2 * pool::kBallRadius;
     if (strength > 1000.0f) {
       strength = 1000.0f;

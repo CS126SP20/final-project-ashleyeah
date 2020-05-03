@@ -52,10 +52,13 @@ Engine::Engine(const cinder::vec2& center, const string& player1_name, const str
                {15, b2Vec2(center.x + 300 + (4 * pool::kBallRadius),
                    center.y - (2 * pool::kBallRadius))},};
 
+  player1_name_ = player1_name;
+  player2_name_ = player2_name;
+
   players_ = {{player1_name, 0},
               {player2_name, 0}};
 
-  player1_turn_ = true;
+  is_player1_turn_ = true;
 }
 
 map<int, b2Vec2> Engine::GetBallPositions() {
@@ -84,18 +87,16 @@ int Engine::GetPlayerScore(const string& name) const {
 }
 
 bool Engine::PlayerTurn(const string &name) const {
-  string player1 = players_.begin()->first;
-  string player2 = players_.rbegin()->first;
-  if (name == player1) {
-    return player1_turn_;
-  } else if (name == player2) {
-    return !player1_turn_;
+  if (name == player1_name_) {
+    return is_player1_turn_;
+  } else if (name == player2_name_) {
+    return !is_player1_turn_;
   }
   return false;
 }
 
 void Engine::SwitchPlayerTurn() {
-  player1_turn_ = !player1_turn_;
+  is_player1_turn_ = !is_player1_turn_;
 }
 
 }

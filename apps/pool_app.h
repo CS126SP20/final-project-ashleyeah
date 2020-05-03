@@ -9,6 +9,7 @@
 #include <pool/engine.h>
 #include <pool/pool_balls.h>
 #include <pool/table.h>
+#include <pool/contact.h>
 
 namespace poolapp {
 
@@ -24,6 +25,7 @@ enum class GameState {
   kInProgress,
   kTurnDone,
   kFoul,
+  kFoulSetup,
   kGameOver,
 };
 
@@ -61,6 +63,9 @@ class PoolApp : public cinder::app::App {
   // Box2D world containing all bodies
   b2World* pool_world_;
 
+  // Contact listener that inherits b2ContactListener
+  pool::Contact contact_;
+
   // PoolBalls object that holds information about all the pool balls
   pool::PoolBalls pool_balls_;
 
@@ -75,6 +80,10 @@ class PoolApp : public cinder::app::App {
 
   // Current state of the game
   GameState state_;
+
+  // Keeps track if blue or orange ball was scored in the last turn
+  bool blue_scored_;
+  bool orange_scored_;
 };
 
 }  // namespace pool
