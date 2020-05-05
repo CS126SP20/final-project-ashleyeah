@@ -11,9 +11,12 @@ const float kHalfTableWidth = 600.0f;
 const float kHalfTableHeight = 300.0f;
 
 class Table {
+
  public:
   Table(b2World* pool_world, float center_x, float center_y);
   b2Body* GetTableBody() const;
+  void CreateFriction(b2World* world, b2Body* ball);
+
  private:
   b2Body* top_edge1_;
   b2Body* top_edge2_;
@@ -22,6 +25,7 @@ class Table {
   b2Body* left_edge_;
   b2Body* right_edge_;
   b2Body* table_body_;
+
 };
 
 }  // namespace pool

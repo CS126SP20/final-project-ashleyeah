@@ -10,7 +10,6 @@
 #include <cinder/gl/draw.h>
 #include <cinder/gl/gl.h>
 #include <gflags/gflags.h>
-#include <pool/pool_balls.h>
 #include <pool/cue.h>
 
 namespace poolapp {
@@ -34,20 +33,20 @@ DECLARE_string(player2);
 
 PoolApp::PoolApp()
   : pool_world_{new b2World({0.0f, 0.0f})},
-    pool_balls_{},
     table_{pool_world_, getWindowCenter().x, getWindowCenter().y},
     cue_stick_{pool_world_, getWindowCenter().x, getWindowCenter().y},
     engine_{getWindowCenter(), FLAGS_player1, FLAGS_player2} ,
     state_{GameState::kBeginGame},
     blue_scored_{false},
-    orange_scored_{false} {}
+    orange_scored_{false},
+    is_first_turn_{true} {}
 
 void PoolApp::setup() {
   pool_world_->SetContactListener(&contact_);
   for (auto pos : engine_.GetBallPositions()) {
-    pool_balls_.CreateBall(pool_world_, pos.second.x, pos.second.y, pos.first);
+    engine_.CreateBall(pool_world_, pos.second.x, pos.second.y, pos.first);
+    table_.CreateFriction(pool_world_, engine_.GetBall(pos.first)->GetBody());
   }
-  CreateFriction();
 }
 
 void PoolApp::update() {
@@ -56,14 +55,14 @@ void PoolApp::update() {
     pool_world_->Step( 1 / 30.0f, 1, 1);
   }
 
-
-  for (auto ball : pool_balls_.GetBalls()) {
+  for (auto ball : engine_.GetBalls()) {
     if (state_ == GameState::kInProgress) {
       if (ball.first == kCueBall && engine_.Pocketed(ball.second->GetBody())) {
         ball.second->GetBody()->SetLinearVelocity({0.0f, 0.0f});
         state_ = GameState::kFoul;
-      } else if (ball.first == kEightBall && engine_.Pocketed(ball.second->GetBody())) {
-        pool_balls_.RemoveBall(ball.first);
+      } else if (ball.first == kEightBall
+          && engine_.Pocketed(ball.second->GetBody())) {
+        engine_.RemoveBall(ball.first);
         state_ = GameState::kGameOver;
       } else if (engine_.Pocketed(ball.second->GetBody())) {
         if (ball.first < kEightBall) {
@@ -73,38 +72,55 @@ void PoolApp::update() {
           engine_.IncreasePlayerScore(FLAGS_player2);
           orange_scored_ = true;
         }
-        pool_balls_.RemoveBall(ball.first);
+        engine_.RemoveBall(ball.first);
       }
     }
   }
 
   if (!BodyMoving()) {
-    if (state_ == GameState::kInProgress) {
+
+    if (state_ == GameState::kSetup || state_ == GameState::kFoulSetup) {
+      engine_.GetBall(kCueBall)->ResetContact();
+    } else if (state_ == GameState::kInProgress) {
       state_ = GameState::kTurnDone;
     } else if (state_ == GameState::kFoul) {
       engine_.SwitchPlayerTurn();
       state_ = GameState::kFoulSetup;
     } else if (state_ == GameState::kTurnDone) {
 
-      int contact = pool_balls_.GetBall(kCueBall)->GetContact();
+      int contact = engine_.GetBall(kCueBall)->GetContact();
 
-      if (contact == kCueBall || contact == kEightBall
-        || (engine_.PlayerTurn(FLAGS_player1) && (contact > kEightBall))
-        || (engine_.PlayerTurn(FLAGS_player2) && (contact < kEightBall))) {
+      string player = FLAGS_player1;
+      if (!engine_.PlayerTurn(FLAGS_player1)) {
+        player = FLAGS_player2;
+      }
+
+      if (is_first_turn_) {
+        if (blue_scored_) {
+          engine_.SetPlayerTurn(FLAGS_player1);
+          is_first_turn_ = false;
+        } else if (orange_scored_) {
+          engine_.SetPlayerTurn(FLAGS_player2);
+          is_first_turn_ = false;
+        } else {
+          engine_.SwitchPlayerTurn();
+        }
+        state_ = GameState::kSetup;
+      } else if (contact == kCueBall
+          || (contact == kEightBall && engine_.GetPlayerScore(player) < 7)
+          || (engine_.PlayerTurn(FLAGS_player1) && (contact > kEightBall))
+          || (engine_.PlayerTurn(FLAGS_player2) && (contact < kEightBall))) {
         engine_.SwitchPlayerTurn();
         state_ = GameState::kFoulSetup;
       } else if ((engine_.PlayerTurn(FLAGS_player1) && blue_scored_)
-      || (engine_.PlayerTurn(FLAGS_player2) && orange_scored_)) {
-        blue_scored_ = false;
-        orange_scored_ = false;
+          || (engine_.PlayerTurn(FLAGS_player2) && orange_scored_)) {
         state_ = GameState::kSetup;
       } else {
         engine_.SwitchPlayerTurn();
-        blue_scored_ = false;
-        orange_scored_ = false;
         state_ = GameState::kSetup;
       }
-      pool_balls_.GetBall(kCueBall)->ResetContact();
+      blue_scored_ = false;
+      orange_scored_ = false;
     }
   }
 }
@@ -125,22 +141,8 @@ void PoolApp::draw() {
   }
 }
 
-void PoolApp::CreateFriction() {
-  for (auto ball : pool_balls_.GetBalls()) {
-    b2Vec2 temp_vec(0.0f, 0.0f);
-    b2FrictionJointDef friction_joint_def;
-    friction_joint_def.localAnchorA = temp_vec;
-    friction_joint_def.localAnchorB = temp_vec;
-    friction_joint_def.bodyA = ball.second->GetBody();
-    friction_joint_def.bodyB = table_.GetTableBody();
-    friction_joint_def.maxForce = 10.0f;
-    friction_joint_def.maxTorque = 0;
-    pool_world_->CreateJoint(&friction_joint_def);
-  }
-}
-
 bool PoolApp::BodyMoving() {
-  for (auto ball : pool_balls_.GetBalls()) {
+  for (auto ball : engine_.GetBalls()) {
     if (!(ball.second->GetBody()->GetLinearVelocity() == b2Vec2_zero)) {
       return true;
     }
@@ -148,30 +150,20 @@ bool PoolApp::BodyMoving() {
   return false;
 }
 
-void PoolApp::TransformCueStick(b2Vec2 mouse_pos) {
-  b2Vec2 ball_pos = pool_balls_.GetBall(kCueBall)->GetBody()->GetPosition();
-  b2Vec2 adjust_pos = mouse_pos - ball_pos;
-  float angle = atan(adjust_pos.y/adjust_pos.x);
-  float length = adjust_pos.Length() - 2 * pool::kBallRadius;
-  if (length > 250.0f) {
-    length = 250.0f;
-  } else if (length < pool::kBallRadius + 1.0f) {
-    length = pool::kBallRadius + 1.0f;
+float PoolApp::KeepInRange(float center, float lim, float pos) {
+  if (pos > center + lim) {
+    return center + lim;
+  } else if (pos < center - lim) {
+    return center - lim;
+  } else {
+    return pos;
   }
-  length += pool::kCueHalfLength;
-  adjust_pos.Normalize();
-  adjust_pos *= length;
-  ball_pos += adjust_pos;
-  cue_stick_.Transform(ball_pos, angle);
-
-  adjust_pos.Normalize();
-  adjust_pos *= -4 * pool::kCueHalfLength;
-  adjust_pos += ball_pos;
-  cue_stick_.SetProjectionRay(adjust_pos, angle);
 }
 
-void PrintText(const string& text, const Color& color, const cinder::ivec2& size, const string& font,
-               const int font_size, const cinder::vec2& loc) {
+void PrintText(const string& text, const Color& color,
+    const cinder::ivec2& size, const string& font,
+    const int font_size, const cinder::vec2& loc) {
+
   cinder::gl::color(color);
 
   auto box = TextBox()
@@ -207,7 +199,7 @@ void PoolApp::DrawPoolTable() const {
   cinder::gl::color(0.039f, 0.424f, 0.012f);
   cinder::gl::drawSolidRect(Rectf(table_x1, table_y1, table_x2, table_y2));
   cinder::gl::color(1, 1, 1);
-  cinder::gl::drawStrokedRect(Rectf(table_x1, table_y1, table_x2, table_y2), 5);
+  cinder::gl::drawStrokedRect(Rectf(table_x1, table_y1, table_x2, table_y2),5);
 
   vector<cinder::vec2> pocket_center = {{table_x1, table_y1},
                                         {getWindowCenter().x, table_y1 - 5},
@@ -225,7 +217,7 @@ void PoolApp::DrawPoolTable() const {
 }
 
 void PoolApp::DrawPoolBalls() const {
-  for (auto ball : pool_balls_.GetBalls()) {
+  for (auto ball : engine_.GetBalls()) {
     float x = ball.second->GetBody()->GetPosition().x;
     float y = ball.second->GetBody()->GetPosition().y;
     cinder::vec2 center = {x, y};
@@ -242,7 +234,7 @@ void PoolApp::DrawPoolBalls() const {
     } else {
       cinder::gl::color(kPlayer2Color);
     }
-    cinder::gl::drawSolidCircle(center, pool::kBallRadius);
+    cinder::gl::drawSolidCircle(center, pool::kBallRadius + 0.5f);
     cinder::gl::color(1.0f, 1.0f, 1.0f);
     cinder::gl::drawStrokedCircle(center, pool::kBallRadius);
   }
@@ -307,7 +299,8 @@ void PoolApp::DrawText() const {
 
   center = {getWindowWidth() - 125, 75};
   color = kPlayer2Color;
-  PrintText(FLAGS_player2, color, size, kDefaultFont, 60, {center.x + 5, center.y + 5});
+  PrintText(FLAGS_player2, color, size, kDefaultFont, 60,
+      {center.x + 5, center.y + 5});
   color = Color::white();
   PrintText(FLAGS_player2, color, size, kDefaultFont, 60, center);
   PrintText(std::to_string(engine_.GetPlayerScore(FLAGS_player2)), color, size,
@@ -315,14 +308,15 @@ void PoolApp::DrawText() const {
 }
 
 void PoolApp::mouseDown(MouseEvent event) {
-  if (event.isLeftDown()) {
+  if (event.isLeftDown() && state_ != GameState::kGameOver) {
     b2Vec2 mouse_pos(event.getX(), event.getY());
     if (state_ == GameState::kSetup) {
-      TransformCueStick(mouse_pos);
+      cue_stick_.SetupCueStick(mouse_pos,
+          engine_.GetBall(kCueBall)->GetBody()->GetPosition());
     } else if (state_ == GameState::kBeginGame) {
       state_ = GameState::kSetup;
     } else if (state_ == GameState::kFoulSetup) {
-      pool_balls_.GetBall(kCueBall)->GetBody()->GetFixtureList()->SetSensor(false);
+      engine_.GetBall(kCueBall)->GetBody()->GetFixtureList()->SetSensor(false);
       state_ = GameState::kSetup;
     }
   }
@@ -331,78 +325,39 @@ void PoolApp::mouseDown(MouseEvent event) {
 void PoolApp::mouseDrag(MouseEvent event) {
   if (event.isLeftDown() && state_ == GameState::kSetup) {
     b2Vec2 mouse_pos(event.getX(), event.getY());
-    TransformCueStick(mouse_pos);
+    cue_stick_.SetupCueStick(mouse_pos,
+        engine_.GetBall(kCueBall)->GetBody()->GetPosition());
   }
 }
 
 void PoolApp::mouseMove(MouseEvent event) {
+
   if (state_ == GameState::kBeginGame) {
+    auto x_pos = engine_.GetBall(kCueBall)->GetBody()->GetPosition().x;
+    auto y_pos = KeepInRange(getWindowCenter().y,pool::kHalfTableHeight
+    - pool::kBallRadius, static_cast<float>(event.getY()));
 
-    auto x_pos = pool_balls_.GetBall(kCueBall)->GetBody()->GetPosition().x;
-    auto y_pos = static_cast<float>(event.getY());
-
-    if (y_pos > (getWindowCenter().y + pool::kHalfTableHeight)
-      - pool::kBallRadius) {
-      y_pos = (getWindowCenter().y + pool::kHalfTableHeight)
-          - pool::kBallRadius;
-    } else if (y_pos < (getWindowCenter().y - pool::kHalfTableHeight)
-      + pool::kBallRadius) {
-      y_pos = (getWindowCenter().y - pool::kHalfTableHeight)
-          + pool::kBallRadius;
-    }
-
-    pool_balls_.GetBall(kCueBall)->GetBody()->SetTransform(b2Vec2(x_pos, y_pos), 0);
+    engine_.GetBall(kCueBall)->GetBody()->SetTransform(b2Vec2(x_pos, y_pos),0);
 
   } else if (state_ == GameState::kFoulSetup && !BodyMoving()) {
+    engine_.GetBall(kCueBall)->GetBody()->GetFixtureList()->SetSensor(true);
+    auto x_pos = KeepInRange(getWindowCenter().x,pool::kHalfTableWidth
+    - pool::kBallRadius, static_cast<float>(event.getX()));
+    auto y_pos = KeepInRange(getWindowCenter().y,pool::kHalfTableHeight
+    - pool::kBallRadius, static_cast<float>(event.getY()));
 
-    pool_balls_.GetBall(kCueBall)->GetBody()->GetFixtureList()->SetSensor(true);
-
-    auto x_pos = static_cast<float>(event.getX());
-    auto y_pos = static_cast<float>(event.getY());
-
-    if (x_pos > (getWindowCenter().x + pool::kHalfTableWidth)
-      - pool::kBallRadius) {
-      x_pos = (getWindowCenter().x + pool::kHalfTableWidth)
-          - pool::kBallRadius;
-    } else if (x_pos < (getWindowCenter().x - pool::kHalfTableWidth)
-      + pool::kBallRadius) {
-      x_pos = (getWindowCenter().x - pool::kHalfTableWidth)
-          + pool::kBallRadius;
-    }
-
-    if (y_pos > (getWindowCenter().y + pool::kHalfTableHeight)
-      - pool::kBallRadius) {
-      y_pos = (getWindowCenter().y + pool::kHalfTableHeight)
-          - pool::kBallRadius;
-    } else if (y_pos < (getWindowCenter().y - pool::kHalfTableHeight)
-      + pool::kBallRadius) {
-      y_pos = (getWindowCenter().y - pool::kHalfTableHeight)
-          + pool::kBallRadius;
-    }
-
-    pool_balls_.GetBall(kCueBall)->GetBody()->SetTransform(b2Vec2(x_pos, y_pos), 0);
+    engine_.GetBall(kCueBall)->GetBody()->SetTransform(b2Vec2(x_pos, y_pos),0);
   }
 }
 
 void PoolApp::mouseUp(MouseEvent event) {
-  if (event.isLeft() && state_ == GameState::kSetup) {
+  if (event.isLeft()) {
     b2Vec2 mouse_pos(event.getX(), event.getY());
-    cue_stick_.Transform(
-        b2Vec2(getWindowCenter().x, getWindowCenter().y - 400), 0.0f);
-    cue_stick_.SetProjectionRay(b2Vec2(getWindowCenter().x, -100.0f), 0.0f);
-    b2Vec2 force = pool_balls_.GetBall(kCueBall)->GetBody()->GetPosition() - mouse_pos;
-    float strength = force.Length() - 2 * pool::kBallRadius;
-    if (strength > 1000.0f) {
-      strength = 1000.0f;
-    } else if (strength < pool::kBallRadius + 4.0f) {
-      strength = pool::kBallRadius + 4.0f;
-    }
-    strength -= pool::kBallRadius + 3.0f;
-    force.Normalize();
-    force *= strength;
-    pool_balls_.MoveCue(2.0f * force);
+    engine_.HitCueBall(cue_stick_.ReleaseCueStick(
+        b2Vec2(getWindowCenter().x, getWindowCenter().y),
+        mouse_pos, engine_.GetBall(kCueBall)->GetBody()->GetPosition()));
     state_ = GameState::kInProgress;
   }
 }
 
-}  // namespace myapp
+}  // namespace poolapp

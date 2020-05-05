@@ -3,7 +3,6 @@
 #include <cinder/app/App.h>
 #include <pool/engine.h>
 #include <pool/table.h>
-#include <pool/pool_balls.h>
 #include <string>
 
 namespace pool {
@@ -50,7 +49,7 @@ Engine::Engine(const cinder::vec2& center, const string& player1_name, const str
                {14, b2Vec2(center.x + 300 + (4 * pool::kBallRadius),
                    center.y + (2 * pool::kBallRadius))},
                {15, b2Vec2(center.x + 300 + (4 * pool::kBallRadius),
-                   center.y - (2 * pool::kBallRadius))},};
+                   center.y - (2 * pool::kBallRadius))}};
 
   player1_name_ = player1_name;
   player2_name_ = player2_name;
@@ -59,6 +58,48 @@ Engine::Engine(const cinder::vec2& center, const string& player1_name, const str
               {player2_name, 0}};
 
   is_player1_turn_ = true;
+}
+
+void Engine::CreateBall(b2World* pool_world, float pos_x, float pos_y, int ball_type) {
+  b2BodyDef body_def;
+  body_def.type = b2_dynamicBody;
+  body_def.position.Set(pos_x, pos_y);
+
+  b2Body* ball = pool_world->CreateBody(&body_def);
+
+  b2CircleShape ballShape;
+  ballShape.m_p.Set(0, 0);
+  ballShape.m_radius = kBallRadius;
+
+  b2FixtureDef fixture_def;
+  fixture_def.shape = &ballShape;
+  fixture_def.restitution = 1.0f;
+  fixture_def.density = 0.15f;
+  ball->CreateFixture(&fixture_def);
+  ball->SetLinearDamping(0.03f);
+  auto* data = new Ball(ball_type, ball);
+  ball->SetUserData(data);
+
+  pool_balls_.emplace(ball_type, data);
+}
+
+void Engine::HitCueBall(b2Vec2 force) {
+  b2Body* cue_ball = pool_balls_.at(0)->GetBody();
+  cue_ball->SetLinearVelocity(force);
+}
+
+Ball* Engine::GetBall(int key) const {
+  return pool_balls_.at(key);
+}
+
+map<int, Ball*> Engine::GetBalls() const {
+  return pool_balls_;
+}
+
+void Engine::RemoveBall(int key) {
+  Ball* temp = pool_balls_.at(key);
+  pool_balls_.erase(key);
+  delete temp;
 }
 
 map<int, b2Vec2> Engine::GetBallPositions() {
@@ -93,6 +134,14 @@ bool Engine::PlayerTurn(const string &name) const {
     return !is_player1_turn_;
   }
   return false;
+}
+
+void Engine::SetPlayerTurn(const string &name) {
+  if (name == player1_name_) {
+    is_player1_turn_ = true;
+  } else if (name == player2_name_) {
+    is_player1_turn_ = false;
+  }
 }
 
 void Engine::SwitchPlayerTurn() {

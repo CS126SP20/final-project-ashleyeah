@@ -8,7 +8,7 @@
     
 - **4/19/20** Implement basic friction and ball bouncing
     - Applied basics of Box2D features in order to create a ball/table (body, shape, fixture, joint)
-    - Test inplementations by applying arbitrary force which causes ball to move in order to test boundaries and friction
+    - Test implementations by applying arbitrary force which causes ball to move in order to test boundaries and friction
     - [x] Force applied on ball doesn't seem to be enough, may need to adjust velocity force
     
 - **4/20/20** Refined ball movement and added multiple balls
@@ -42,8 +42,14 @@
     - Engine takes care of the players (name, score) and keeps track of progress
     - Scoring system currently only consists of only a point to player who's corresponding ball is pocketed
     
- **4/29/20** Minor changes to game function and graphics
+- **4/29/20** Minor changes to game function and graphics
     - Now allows player to change the position of the ball accordingly at the beginning of the game for the break as well as when the other player commits a foul
     - Ball can only be moved along a line at the beginning, while after a foul, the other player can place the cue ball wherever
     
  **WEEK 3**
+ - **5/1/20 - 5/2/20** Spent time working on contact listener in order to detect fouls
+    - Rules in pool mean that I need to detect what ball the cue ball hits first or if it hits any ball at all in order to detect fouls
+        -  **In pool, fouls are committed either when the cue ball goes into a pocket or when the cue ball does not make contact with any ball, or it makes contact first with ball that is not the current player's ball*
+    - Added class that inherited b2ContactListener in order to keep track of contacts
+    - Had to add a ball class in order implement a ball object that would keep track of its own contacts
+    

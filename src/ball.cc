@@ -28,7 +28,7 @@ void Ball::ResetContact() {
 
 void Ball::HandleContact(Ball *other) {
   if (contact_ == 0) {
-    contact_ = other->ball_type_;
+    contact_ = other->GetBallType();
   }
 }
 
@@ -36,4 +36,4 @@ Ball::~Ball() {
   ball_->GetWorld()->DestroyBody(ball_);
 }
 
-}
+} // namespace pool

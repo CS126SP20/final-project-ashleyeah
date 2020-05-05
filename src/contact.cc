@@ -19,4 +19,4 @@ void Contact::BeginContact(b2Contact* contact) {
   }
 }
 
-}
+} // namespace pool

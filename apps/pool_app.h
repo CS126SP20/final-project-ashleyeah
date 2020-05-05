@@ -7,7 +7,6 @@
 #include <cinder/app/App.h>
 #include <pool/cue.h>
 #include <pool/engine.h>
-#include <pool/pool_balls.h>
 #include <pool/table.h>
 #include <pool/contact.h>
 
@@ -42,15 +41,10 @@ class PoolApp : public cinder::app::App {
 
  private:
 
-  // Creates friction between balls and the table
-  void CreateFriction();
-
   // Determines if the play is in progress by checking if any balls are
   // still moving
   bool BodyMoving();
-
-  // Moves the cue stick based of position of the mouse
-  void TransformCueStick(b2Vec2 mouse_pos);
+  static float KeepInRange(float center, float lim, float pos);
 
   void DrawPoolTable() const;
   void DrawPoolBalls() const;
@@ -65,9 +59,6 @@ class PoolApp : public cinder::app::App {
 
   // Contact listener that inherits b2ContactListener
   pool::Contact contact_;
-
-  // PoolBalls object that holds information about all the pool balls
-  pool::PoolBalls pool_balls_;
 
   // Table object holds information about the table's body and surface
   pool::Table table_;
@@ -84,8 +75,12 @@ class PoolApp : public cinder::app::App {
   // Keeps track if blue or orange ball was scored in the last turn
   bool blue_scored_;
   bool orange_scored_;
+
+  // Keeps track if the turn was the first one
+  bool is_first_turn_;
+
 };
 
-}  // namespace pool
+}  // namespace poolapp
 
 #endif  // FINALPROJECT_APPS_POOL_APP_H_

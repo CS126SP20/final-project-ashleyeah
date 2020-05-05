@@ -1,6 +1,5 @@
 // Copyright (c) 2020 Ashley Yeah. All rights reserved.
 
-#include <pool/pool_balls.h>
 #include <pool/table.h>
 
 namespace pool {
@@ -58,6 +57,18 @@ Table::Table(b2World *pool_world, float center_x, float center_y) {
 
 b2Body* Table::GetTableBody() const {
   return table_body_;
+}
+
+void Table::CreateFriction(b2World *world, b2Body *ball) {
+  b2Vec2 temp_vec(0.0f, 0.0f);
+  b2FrictionJointDef friction_joint_def;
+  friction_joint_def.localAnchorA = temp_vec;
+  friction_joint_def.localAnchorB = temp_vec;
+  friction_joint_def.bodyA = ball;
+  friction_joint_def.bodyB = table_body_;
+  friction_joint_def.maxForce = 10.0f;
+  friction_joint_def.maxTorque = 0;
+  world->CreateJoint(&friction_joint_def);
 }
 
 }  // namespace pool

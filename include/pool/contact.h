@@ -11,6 +11,6 @@ class Contact : public b2ContactListener {
   void BeginContact(b2Contact* contact) override;
 };
 
-}
+} // namespae pool
 
 #endif  // FINALPROJECT_INCLUDE_POOL_CONTACT_H_

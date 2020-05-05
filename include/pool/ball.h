@@ -16,12 +16,14 @@ class Ball {
   void ResetContact();
   void HandleContact(Ball* other);
   ~Ball();
+
  private:
   int ball_type_;
   b2Body* ball_;
   int contact_;
+
 };
 
-}
+} // namespace pool
 
 #endif  // FINALPROJECT_INCLUDE_POOL_BALL_H_
