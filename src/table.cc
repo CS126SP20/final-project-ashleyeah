@@ -5,6 +5,7 @@
 namespace pool {
 
 Table::Table(b2World *pool_world, float center_x, float center_y) {
+  // Creates and adds each edge of the table as well as the body to the world
   b2BodyDef body_def;
   body_def.type = b2_kinematicBody;
 
@@ -60,6 +61,7 @@ b2Body* Table::GetTableBody() const {
 }
 
 void Table::CreateFriction(b2World *world, b2Body *ball) {
+  // Process creates a friction joint between the ball and the table body
   b2Vec2 temp_vec(0.0f, 0.0f);
   b2FrictionJointDef friction_joint_def;
   friction_joint_def.localAnchorA = temp_vec;

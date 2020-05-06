@@ -16,6 +16,7 @@ const int kSamples = 8;
 const int kWidth = 1800;
 const int kHeight = 1100;
 
+// gflags so player's names can be changed
 DEFINE_string(player1, "Player 1", "the name of blue player");
 DEFINE_string(player2, "Player 2", "the name of red player");
 

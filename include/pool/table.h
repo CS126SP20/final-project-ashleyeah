@@ -14,7 +14,11 @@ class Table {
 
  public:
   Table(b2World* pool_world, float center_x, float center_y);
+
+  // Getter for the body of the table
   b2Body* GetTableBody() const;
+
+  // Creates friction between each ball and the table body
   void CreateFriction(b2World* world, b2Body* ball);
 
  private:

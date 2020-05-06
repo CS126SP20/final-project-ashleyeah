@@ -10,10 +10,16 @@ namespace pool {
 class Ball {
  public:
   Ball(int ball_type, b2Body* body);
+
+  // Getter for each ball aspect
   int GetBallType() const;
   int GetContact() const;
   b2Body* GetBody() const;
+
+  // Resets ball contact to default 0
   void ResetContact();
+
+  // Sets contact when contact listener detects contact
   void HandleContact(Ball* other);
   ~Ball();
 

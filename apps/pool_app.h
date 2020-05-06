@@ -31,10 +31,14 @@ enum class GameState {
 
 class PoolApp : public cinder::app::App {
  public:
+
+  // cinder default functions
   PoolApp();
   void setup() override;
   void update() override;
   void draw() override;
+
+  // All mouse actions used
   void mouseDown(cinder::app::MouseEvent) override;
   void mouseDrag(cinder::app::MouseEvent) override;
   void mouseMove(cinder::app::MouseEvent) override;
@@ -45,8 +49,8 @@ class PoolApp : public cinder::app::App {
   // Determines if the play is in progress by checking if any balls are
   // still moving
   bool BodyMoving();
-  static float KeepInRange(float center, float lim, float pos);
 
+  // Helper methods that draw certain aspects of the game
   void DrawStartScreen() const;
   void DrawPoolTable() const;
   void DrawPoolBalls() const;

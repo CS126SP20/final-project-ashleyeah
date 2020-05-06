@@ -11,6 +11,7 @@ using std::sqrt;
 using std::pow;
 using std::string;
 
+// Simple helper method to determine distance
 float CalculateDistance(float x1, float x2, float y1, float y2) {
   return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
 }
@@ -61,6 +62,8 @@ Engine::Engine(const cinder::vec2& center, const string& player1_name, const str
 }
 
 void Engine::CreateBall(b2World* pool_world, float pos_x, float pos_y, int ball_type) {
+
+  // Creates body, shape, and fixture of ball
   b2BodyDef body_def;
   body_def.type = b2_dynamicBody;
   body_def.position.Set(pos_x, pos_y);
@@ -80,6 +83,7 @@ void Engine::CreateBall(b2World* pool_world, float pos_x, float pos_y, int ball_
   auto* data = new Ball(ball_type, ball);
   ball->SetUserData(data);
 
+  // Adds ball and its data to the map
   pool_balls_.emplace(ball_type, data);
 }
 
@@ -109,10 +113,13 @@ map<int, b2Vec2> Engine::GetBallPositions() {
 bool Engine::Pocketed(b2Body* ball) const {
   float ball_x = ball->GetPosition().x;
   float ball_y = ball->GetPosition().y;
+  // For each pocket, check if the ball was within distance of the pocket to be
+  // considered pocketed
   for (auto & pos : pocket_pos_) {
     float pocket_x = pos.x;
     float pocket_y = pos.y;
-    if (CalculateDistance(ball_x, pocket_x, ball_y, pocket_y) < kPocketRadius) {
+    if (CalculateDistance(ball_x, pocket_x, ball_y, pocket_y)
+      < kPocketRadius) {
       return true;
     }
   }

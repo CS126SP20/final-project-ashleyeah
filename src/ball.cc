@@ -33,6 +33,7 @@ void Ball::HandleContact(Ball *other) {
 }
 
 Ball::~Ball() {
+  // Calls for Box2D to destroy the ball body
   ball_->GetWorld()->DestroyBody(ball_);
 }
 

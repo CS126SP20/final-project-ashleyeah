@@ -8,6 +8,7 @@
 namespace pool {
 
 class Contact : public b2ContactListener {
+  // Override contact listener's method
   void BeginContact(b2Contact* contact) override;
 };
 

@@ -13,14 +13,16 @@ class Cue {
 
  public:
   Cue(b2World* pool_world, float center_x, float center_y);
+
+  // Getter for each aspect of the cue stick
   b2Body* GetStick() const;
   b2Body* GetRay() const;
+
+  // Move and releasing of the cue stick
   void SetupCueStick(b2Vec2 mouse_pos, b2Vec2 ball_pos);
   b2Vec2 ReleaseCueStick(b2Vec2 window_center, b2Vec2 mouse_pos, b2Vec2 ball_pos);
 
  private:
-  void Transform(b2Vec2 pos, float angle);
-  void SetProjectionRay(b2Vec2 pos, float angle);
 
   b2Body* cue_stick_;
   b2Body* project_ray_;
