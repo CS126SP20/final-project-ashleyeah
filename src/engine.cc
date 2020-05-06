@@ -127,7 +127,15 @@ int Engine::GetPlayerScore(const string& name) const {
   return players_.at(name);
 }
 
-bool Engine::PlayerTurn(const string &name) const {
+string Engine::GetPlayerTurn() const {
+  if (is_player1_turn_) {
+    return player1_name_;
+  } else {
+    return player2_name_;
+  }
+}
+
+bool Engine::IsPlayerTurn(const string &name) const {
   if (name == player1_name_) {
     return is_player1_turn_;
   } else if (name == player2_name_) {

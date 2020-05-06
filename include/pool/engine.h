@@ -36,7 +36,8 @@ class Engine {
   bool Pocketed(b2Body* ball) const;
   void IncreasePlayerScore(const string& name);
   int GetPlayerScore(const string& name) const;
-  bool PlayerTurn(const string& name) const;
+  string GetPlayerTurn() const;
+  bool IsPlayerTurn(const string& name) const;
   void SetPlayerTurn(const string& name);
   void SwitchPlayerTurn();
 

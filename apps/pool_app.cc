@@ -24,7 +24,8 @@ using cinder::app::MouseEvent;
 
 const int kCueBall = 0;
 const int kEightBall = 8;
-const string kDefaultFont = "Product Sans";
+const int kSmallFont = 40;
+const int kNormalFont = 50;
 const ci::Color kPlayer1Color = {0.145f, 0.231f, 0.574f};
 const ci::Color kPlayer2Color = {0.910f, 0.290f, 0.153f};
 
@@ -36,10 +37,11 @@ PoolApp::PoolApp()
     table_{pool_world_, getWindowCenter().x, getWindowCenter().y},
     cue_stick_{pool_world_, getWindowCenter().x, getWindowCenter().y},
     engine_{getWindowCenter(), FLAGS_player1, FLAGS_player2} ,
-    state_{GameState::kBeginGame},
+    state_{GameState::kStartScreen},
     blue_scored_{false},
     orange_scored_{false},
-    is_first_turn_{true} {}
+    is_first_turn_{true},
+    winner_{""} {}
 
 void PoolApp::setup() {
   pool_world_->SetContactListener(&contact_);
@@ -91,7 +93,7 @@ void PoolApp::update() {
       int contact = engine_.GetBall(kCueBall)->GetContact();
 
       string player = FLAGS_player1;
-      if (!engine_.PlayerTurn(FLAGS_player1)) {
+      if (!engine_.IsPlayerTurn(FLAGS_player1)) {
         player = FLAGS_player2;
       }
 
@@ -108,12 +110,12 @@ void PoolApp::update() {
         state_ = GameState::kSetup;
       } else if (contact == kCueBall
           || (contact == kEightBall && engine_.GetPlayerScore(player) < 7)
-          || (engine_.PlayerTurn(FLAGS_player1) && (contact > kEightBall))
-          || (engine_.PlayerTurn(FLAGS_player2) && (contact < kEightBall))) {
+          || (engine_.IsPlayerTurn(FLAGS_player1) && (contact > kEightBall))
+          || (engine_.IsPlayerTurn(FLAGS_player2) && (contact < kEightBall))) {
         engine_.SwitchPlayerTurn();
         state_ = GameState::kFoulSetup;
-      } else if ((engine_.PlayerTurn(FLAGS_player1) && blue_scored_)
-          || (engine_.PlayerTurn(FLAGS_player2) && orange_scored_)) {
+      } else if ((engine_.IsPlayerTurn(FLAGS_player1) && blue_scored_)
+          || (engine_.IsPlayerTurn(FLAGS_player2) && orange_scored_)) {
         state_ = GameState::kSetup;
       } else {
         engine_.SwitchPlayerTurn();
@@ -123,11 +125,26 @@ void PoolApp::update() {
       orange_scored_ = false;
     }
   }
+
+  if (state_ == GameState::kGameOver) {
+    if (engine_.GetPlayerScore(engine_.GetPlayerTurn()) == 7) {
+      winner_ = engine_.GetPlayerTurn();
+    } else {
+      if (engine_.GetPlayerTurn() == FLAGS_player1) {
+        winner_ = FLAGS_player2;
+      } else if (engine_.GetPlayerTurn() == FLAGS_player2) {
+        winner_ = FLAGS_player1;
+      }
+    }
+  }
 }
 
+
 void PoolApp::draw() {
-  cinder::gl::clear();
-  if (state_ != GameState::kGameOver) {
+  if (state_ == GameState::kStartScreen) {
+    DrawStartScreen();
+  } else {
+    cinder::gl::clear(Color(0.15f, 0.15f, 0.15f));
     DrawPoolTable();
     if (state_ == GameState::kBeginGame) {
       DrawGuideLine();
@@ -137,7 +154,10 @@ void PoolApp::draw() {
       DrawHelpRay();
     }
     DrawCueStick();
-    DrawText();
+    DrawScoreText();
+    if (state_ == GameState::kGameOver) {
+      DrawEndScreen();
+    }
   }
 }
 
@@ -161,14 +181,14 @@ float PoolApp::KeepInRange(float center, float lim, float pos) {
 }
 
 void PrintText(const string& text, const Color& color,
-    const cinder::ivec2& size, const string& font,
+    const cinder::ivec2& size,
     const int font_size, const cinder::vec2& loc) {
 
   cinder::gl::color(color);
 
   auto box = TextBox()
       .alignment(TextBox::CENTER)
-      .font(cinder::Font(font, static_cast<float>(font_size)))
+      .font(cinder::Font("Karmatic Arcade", static_cast<float>(font_size)))
       .size(size)
       .color(color)
       .backgroundColor(ColorA(0, 0, 0, 0))
@@ -180,6 +200,29 @@ void PrintText(const string& text, const Color& color,
   const auto surface = box.render();
   const auto texture = cinder::gl::Texture::create(surface);
   cinder::gl::draw(texture, locp);
+}
+
+void PoolApp::DrawStartScreen() const {
+  cinder::gl::clear(Color(0.039f, 0.424f, 0.012f));
+
+  // Draw stroked rectangle as border of the button
+  cinder::gl::color(Color::white());
+  cinder::gl::drawSolidRoundedRect(
+      Rectf(static_cast<int>(getWindowWidth() / 2 - 150),
+            static_cast<int>(getWindowHeight()  / 2 + 50),
+            static_cast<int>(getWindowWidth()  / 2 + 150),
+            static_cast<int>(getWindowHeight() / 2 + 150)), 20.0f);
+
+  const cinder::vec2 center = getWindowCenter();
+  const cinder::ivec2 size = {1500, 75};
+  Color color = Color::gray(0.4f);
+  PrintText("8-Ball Pool", color, size,
+            100, {center.x, center.y - 100});
+  PrintText("Start", color, size,
+            kNormalFont, {center.x, center.y + 100});
+  color = Color::white();
+  PrintText("8-Ball Pool", color, size,
+            100, {center.x + 2, center.y - 102});
 }
 
 void PoolApp::DrawPoolTable() const {
@@ -214,6 +257,13 @@ void PoolApp::DrawPoolTable() const {
     cinder::gl::color(1, 1, 1);
     cinder::gl::drawStrokedCircle(pos, pool::kPocketRadius, 3.0f);
   }
+  cinder::gl::color(Color(0.5f,0.5f,0.5f));
+  cinder::gl::drawSolidRoundedRect(Rectf(110.0f,
+      getWindowCenter().y - 150.0f, 150.0f,
+      getWindowCenter().y + 150.0f), 20.0f);
+  cinder::gl::drawSolidRoundedRect(Rectf(getWindowWidth() - 150.0f,
+      getWindowCenter().y - 150.0f, getWindowWidth() - 110.0f,
+      getWindowCenter().y + 150.0f), 20.0f);
 }
 
 void PoolApp::DrawPoolBalls() const {
@@ -236,7 +286,18 @@ void PoolApp::DrawPoolBalls() const {
     }
     cinder::gl::drawSolidCircle(center, pool::kBallRadius + 0.5f);
     cinder::gl::color(1.0f, 1.0f, 1.0f);
-    cinder::gl::drawStrokedCircle(center, pool::kBallRadius);
+  }
+  for (int i = 0; i < engine_.GetPlayerScore(FLAGS_player1); i++) {
+    cinder::gl::color(kPlayer1Color);
+    cinder::vec2 center = {130.0f, 430.0f + i * 40.0f};
+    cinder::gl::drawSolidCircle(center, pool::kBallRadius + 0.5f);
+    cinder::gl::color(1.0f, 1.0f, 1.0f);
+  }
+  for (int i = 0; i < engine_.GetPlayerScore(FLAGS_player2); i++) {
+    cinder::gl::color(kPlayer2Color);
+    cinder::vec2 center = {getWindowWidth() - 130.0f, 430.0f + i * 40.0f};
+    cinder::gl::drawSolidCircle(center, pool::kBallRadius + 0.5f);
+    cinder::gl::color(1.0f, 1.0f, 1.0f);
   }
 }
 
@@ -250,7 +311,7 @@ void PoolApp::DrawCueStick() const {
   cinder::gl::drawSolidRect(Rectf(-pool::kCueHalfLength, -4.0f,
       pool::kCueHalfLength, 4.0f));
 
-  if (engine_.PlayerTurn(FLAGS_player1)) {
+  if (engine_.IsPlayerTurn(FLAGS_player1)) {
     cinder::gl::color(kPlayer1Color);
   } else {
     cinder::gl::color(kPlayer2Color);
@@ -285,32 +346,66 @@ void PoolApp::DrawGuideLine() const {
       {getWindowCenter().x - 300, getWindowCenter().y + 300});
 }
 
-void PoolApp::DrawText() const {
-  cinder::vec2 center = {125, 75};
-  const cinder::ivec2 size = {200, 50};
+void PoolApp::DrawScoreText() const {
+  cinder::vec2 center = {130, 75};
+  cinder::ivec2 size = {220, 50};
 
   Color color = kPlayer1Color;
-  PrintText(FLAGS_player1, color, size,
-      kDefaultFont, 60, {center.x + 5, center.y + 5});
-  color = Color::white();
-  PrintText(FLAGS_player1, color, size, kDefaultFont, 60, center);
-  PrintText(std::to_string(engine_.GetPlayerScore(FLAGS_player1)), color, size,
-            kDefaultFont, 60, {center.x, center.y + 75});
-
-  center = {getWindowWidth() - 125, 75};
-  color = kPlayer2Color;
-  PrintText(FLAGS_player2, color, size, kDefaultFont, 60,
+  PrintText(FLAGS_player1, Color(0.245f, 0.371f, 0.774f), size, kSmallFont,
       {center.x + 5, center.y + 5});
   color = Color::white();
-  PrintText(FLAGS_player2, color, size, kDefaultFont, 60, center);
-  PrintText(std::to_string(engine_.GetPlayerScore(FLAGS_player2)), color, size,
-            kDefaultFont, 60, {center.x, center.y + 75});
+  PrintText(FLAGS_player1, color, size, kSmallFont, center);
+  PrintText(std::to_string(engine_.GetPlayerScore(FLAGS_player1)),
+      color, size, kSmallFont, {center.x, center.y + 65});
+
+  center = {getWindowWidth() - 130, 75};
+  color = kPlayer2Color;
+  PrintText(FLAGS_player2, color, size, kSmallFont,
+      {center.x + 5, center.y + 5});
+  color = Color::white();
+  PrintText(FLAGS_player2, color, size, kSmallFont, center);
+  PrintText(std::to_string(engine_.GetPlayerScore(FLAGS_player2)),
+      color, size, kSmallFont, {center.x, center.y + 65});
+
+  center = {getWindowCenter().x, getWindowCenter().y + 425.0f};
+  size = {1000.0f, 65.0f};
+  if (state_ == GameState::kFoulSetup) {
+    if (engine_.IsPlayerTurn(FLAGS_player1)) {
+      PrintText("Foul by " + FLAGS_player2,
+      color, size, kSmallFont, center);
+    } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
+      PrintText("Foul by " + FLAGS_player1,
+      color, size, kSmallFont, center);
+    }
+  }
+}
+
+void PoolApp::DrawEndScreen() const {
+  cinder::gl::color(Color::black());
+  cinder::gl::drawSolidRect(
+      Rectf(getWindowCenter().x- 350, getWindowCenter().y - 250,
+            getWindowCenter().x + 350, getWindowCenter().y + 250));
+  cinder::gl::color(Color::white());
+  cinder::gl::drawStrokedRect(
+      Rectf(getWindowCenter().x- 350, getWindowCenter().y - 250,
+            getWindowCenter().x + 350, getWindowCenter().y + 250), 10.0f);
+
+  const cinder::ivec2 size = {700, 500};
+  PrintText("Game Over\n\n" + winner_ + " wins",
+      Color::white(), size, 50, getWindowCenter());
 }
 
 void PoolApp::mouseDown(MouseEvent event) {
-  if (event.isLeftDown() && state_ != GameState::kGameOver) {
+  if (event.isLeftDown()) {
     b2Vec2 mouse_pos(event.getX(), event.getY());
-    if (state_ == GameState::kSetup) {
+    if (state_ == GameState::kStartScreen) {
+      if (event.getX() >= getWindowWidth() / 2 - 150
+          && event.getX() <= getWindowWidth() / 2 + 150
+          && event.getY() >= getWindowHeight() / 2 + 50
+          && event.getY() <= getWindowHeight() / 2 + 150) {
+        state_ = GameState::kBeginGame;
+      }
+    } else if (state_ == GameState::kSetup) {
       cue_stick_.SetupCueStick(mouse_pos,
           engine_.GetBall(kCueBall)->GetBody()->GetPosition());
     } else if (state_ == GameState::kBeginGame) {
@@ -351,7 +446,8 @@ void PoolApp::mouseMove(MouseEvent event) {
 }
 
 void PoolApp::mouseUp(MouseEvent event) {
-  if (event.isLeft()) {
+  if (event.isLeft() && (state_ == GameState::kSetup
+    || state_ == GameState::kFoulSetup)) {
     b2Vec2 mouse_pos(event.getX(), event.getY());
     engine_.HitCueBall(cue_stick_.ReleaseCueStick(
         b2Vec2(getWindowCenter().x, getWindowCenter().y),

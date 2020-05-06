@@ -19,14 +19,17 @@ TEST_CASE("Ball Related Functions", "[Engine]") {
   engine.CreateBall(&world, 800.0f, 300.0f, 13);
   SECTION("Get All Balls") {
     REQUIRE(engine.GetBalls().size() == 2);
-    REQUIRE(engine.GetBalls().at(4)->GetBody()->GetPosition() == b2Vec2(5.0f, 10.0f));
-    REQUIRE(engine.GetBalls().at(13)->GetBody()->GetPosition() == b2Vec2(800.0f, 300.0f));
+    REQUIRE(engine.GetBalls().at(4)->GetBody()->GetPosition()
+      == b2Vec2(5.0f, 10.0f));
+    REQUIRE(engine.GetBalls().at(13)->GetBody()->GetPosition()
+      == b2Vec2(800.0f, 300.0f));
   }
   SECTION("Get Specific Ball") {
     REQUIRE(engine.GetBall(4)->GetBallType() == 4);
     REQUIRE(engine.GetBall(4)->GetBody()->GetPosition() == b2Vec2(5.0f, 10.0f));
     REQUIRE(engine.GetBall(13)->GetBallType() == 13);
-    REQUIRE(engine.GetBall(13)->GetBody()->GetPosition() == b2Vec2(800.0f, 300.0f));
+    REQUIRE(engine.GetBall(13)->GetBody()->GetPosition()
+      == b2Vec2(800.0f, 300.0f));
     REQUIRE_THROWS(engine.GetBall(5));
   }
   SECTION("Remove Ball") {
@@ -48,7 +51,8 @@ TEST_CASE("Hit Cue Ball", "[Engine]") {
   b2World world({0.0f, 0.0f});
   engine.CreateBall(&world, 5.0f, 10.0f, 0);
   engine.HitCueBall(b2Vec2(10.0f, 0.0f));
-  REQUIRE(engine.GetBall(0)->GetBody()->GetLinearVelocity() == b2Vec2(10.0f, 0.0f));
+  REQUIRE(engine.GetBall(0)->GetBody()->GetLinearVelocity()
+    == b2Vec2(10.0f, 0.0f));
 }
 
 TEST_CASE("Determine Ball in Pocket", "[Engine]") {
@@ -89,15 +93,18 @@ TEST_CASE("Score Related Functions", "[Engine]") {
 TEST_CASE("Player Turn Related Functions", "[Engine]") {
   pool::Engine engine({900.0f, 550.0f}, "player1", "player2");
   SECTION("Check If Current Player Turn") {
-    REQUIRE(engine.PlayerTurn("player1"));
+    REQUIRE(engine.IsPlayerTurn("player1"));
+  }
+  SECTION("Get Current Player") {
+    REQUIRE(engine.GetPlayerTurn() == "player1");
   }
   SECTION("Switch Player Turn") {
     engine.SwitchPlayerTurn();
-    REQUIRE(engine.PlayerTurn("player2"));
+    REQUIRE(engine.IsPlayerTurn("player2"));
   }
   SECTION("Set Player Turn") {
     engine.SetPlayerTurn("player1");
-    REQUIRE(engine.PlayerTurn("player1"));
+    REQUIRE(engine.IsPlayerTurn("player1"));
   }
 }
 

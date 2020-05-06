@@ -52,4 +52,18 @@
         -  **In pool, fouls are committed either when the cue ball goes into a pocket or when the cue ball does not make contact with any ball, or it makes contact first with ball that is not the current player's ball*
     - Added class that inherited b2ContactListener in order to keep track of contacts
     - Had to add a ball class in order implement a ball object that would keep track of its own contacts
+
+- **5/3/20 - 5/4/20** Reorganized Classes and Removed Inefficiencies
+    - Reorganized classes as well as functions in classes and removed unnecessary classes
+    - Moved some functionality out of the main app class and into helper methods
+    - Finished writing tests for all used helper functions
     
+- **5/5/20** Finalized Graphics of Game
+    - Added start and end screen
+        - End screen displays the winner of the game
+    - Finalized fonts, font sizes
+    - Added side bar to display balls that were already pocketed
+    
+- **5/6/20** Finish Project
+    - Wrote helpful explanation comments
+    - [ ] Finish README.md with full project explanation

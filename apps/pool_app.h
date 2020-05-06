@@ -19,6 +19,7 @@ using std::string;
 using std::vector;
 
 enum class GameState {
+  kStartScreen,
   kBeginGame,
   kSetup,
   kInProgress,
@@ -46,12 +47,14 @@ class PoolApp : public cinder::app::App {
   bool BodyMoving();
   static float KeepInRange(float center, float lim, float pos);
 
+  void DrawStartScreen() const;
   void DrawPoolTable() const;
   void DrawPoolBalls() const;
   void DrawCueStick() const;
   void DrawHelpRay() const;
   void DrawGuideLine() const;
-  void DrawText() const;
+  void DrawScoreText() const;
+  void DrawEndScreen() const;
 
  private:
   // Box2D world containing all bodies
@@ -78,6 +81,9 @@ class PoolApp : public cinder::app::App {
 
   // Keeps track if the turn was the first one
   bool is_first_turn_;
+
+  // name of the winner
+  string winner_;
 
 };
 
