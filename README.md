@@ -33,7 +33,11 @@ Upon downloading and building the game, simply run the game. Then press the star
 
 ![Start Screen](https://raw.githubusercontent.com/CS126SP20/final-project-ashleyeah/master/assets/images/8-ball%20start.png?token=ANDXBLLKLPCKV4NCZHXISGC6XSIUY)
 
-Then simply using your mouse, left click to place the ball and continue pressing down on the cursor to drag the cue stick around the ball. Let go when ready to shoot. Be aware not to commit a foul.
+If you don't really know how to play pool, instructions are located on the help screen which are pretty much the same things as described below.
+
+![Help Screen](https://raw.githubusercontent.com/CS126SP20/final-project-ashleyeah/master/assets/images/8-ball%20help.png?token=ANDXBLPMZAGK6O5MBVIWHDS6XTEM2)
+
+Then simply using your mouse, left click to place the ball and continue pressing down on the cursor to drag the cue stick around the ball. Let go when ready to shoot. Before the first ball is made, there is no designated color that you must pocket, but afterwards, you must pocket your own color. Be aware not to commit a foul.
 
 ![Foul](https://raw.githubusercontent.com/CS126SP20/final-project-ashleyeah/master/assets/images/8-ball%20foul.png?token=ANDXBLNGGS5OEYDOS67QTA26XSI72)
   
