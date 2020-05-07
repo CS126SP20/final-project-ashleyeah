@@ -29,7 +29,7 @@ A simple implementation of a virtual game of pool
 
 # Features
 
-Upon downloading and running the game, simply press the start button.
+Upon downloading and building the game, simply run the game. Then press the start button.
 
 ![Start Screen](https://raw.githubusercontent.com/CS126SP20/final-project-ashleyeah/master/assets/images/8-ball%20start.png?token=ANDXBLLKLPCKV4NCZHXISGC6XSIUY)
 

@@ -20,6 +20,7 @@ using std::vector;
 
 enum class GameState {
   kStartScreen,
+  kHelpScreen,
   kBeginGame,
   kSetup,
   kInProgress,
@@ -52,6 +53,7 @@ class PoolApp : public cinder::app::App {
 
   // Helper methods that draw certain aspects of the game
   void DrawStartScreen() const;
+  void DrawHelpScreen() const;
   void DrawPoolTable() const;
   void DrawPoolBalls() const;
   void DrawCueStick() const;
@@ -82,6 +84,10 @@ class PoolApp : public cinder::app::App {
   // Keeps track if blue or orange ball was scored in the last turn
   bool blue_scored_;
   bool orange_scored_;
+
+  // Color of each player
+  Color player1_color_;
+  Color player2_color_;
 
   // Keeps track if the turn was the first one
   bool is_first_turn_;

@@ -66,4 +66,5 @@
     
 - **5/6/20** Finish Project
     - Wrote helpful explanation comments
-    - [ ] Finish README.md with full project explanation
+    - [x] Finish README.md with full project explanation
+    - Had some extra time so added a few extra functionalities such as an instruction page

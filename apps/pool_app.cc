@@ -31,10 +31,14 @@ const int kEightBall = 8;
 // Font sizes used
 const int kSmallFont = 40;
 const int kNormalFont = 50;
+const int kLargeFont = 100;
 
-// Player colors
-const ci::Color kPlayer1Color = {0.145f, 0.231f, 0.574f};
-const ci::Color kPlayer2Color = {0.910f, 0.290f, 0.153f};
+// Default font
+const string kDefaultFont = "Karmatic Arcade";
+
+// Ball colors
+const Color kBlue = {0.145f, 0.231f, 0.574f};
+const Color kOrange = {0.910f, 0.290f, 0.153f};
 
 DECLARE_string(player1);
 DECLARE_string(player2);
@@ -47,6 +51,8 @@ PoolApp::PoolApp()
     state_{GameState::kStartScreen},
     blue_scored_{false},
     orange_scored_{false},
+    player1_color_{Color(0.6f, 0.6f, 0.6f)},
+    player2_color_{Color(0.6f, 0.6f, 0.6f)},
     is_first_turn_{true},
     winner_{""} {}
 
@@ -63,7 +69,7 @@ void PoolApp::setup() {
 }
 
 void PoolApp::update() {
-  // Moves 10 stpes in the Box2D world every update
+  // Moves 10 steps in the Box2D world every update
   for (int i = 0; i < 10; ++i) {
     pool_world_->Step( 1 / 30.0f, 1, 1);
   }
@@ -88,11 +94,28 @@ void PoolApp::update() {
 
         // Checks if any other ball is pocketed -> Ball is removed
       } else if (engine_.Pocketed(ball.second->GetBody())) {
+        // Increases the score of the player with that colored ball
         if (ball.first < kEightBall) {
-          engine_.IncreasePlayerScore(FLAGS_player1);
+          if (is_first_turn_) {
+            engine_.IncreasePlayerScore(engine_.GetPlayerTurn());
+          } else {
+            if (player1_color_ == kBlue) {
+              engine_.IncreasePlayerScore(FLAGS_player1);
+            } else {
+              engine_.IncreasePlayerScore(FLAGS_player2);
+            }
+          }
           blue_scored_ = true;
         } else if (ball.first > kEightBall) {
-          engine_.IncreasePlayerScore(FLAGS_player2);
+          if (is_first_turn_) {
+            engine_.IncreasePlayerScore(engine_.GetPlayerTurn());
+          } else {
+            if (player1_color_ == kOrange) {
+              engine_.IncreasePlayerScore(FLAGS_player1);
+            } else {
+              engine_.IncreasePlayerScore(FLAGS_player2);
+            }
+          }
           orange_scored_ = true;
         }
         engine_.RemoveBall(ball.first);
@@ -130,13 +153,26 @@ void PoolApp::update() {
         player = FLAGS_player2;
       }
 
-      // If turn is before first shot is made, ignore some foul rules
+      // If turn is before first shot is made, ignore some foul rules and
+      // set the corresponding color of the players
       if (is_first_turn_) {
         if (blue_scored_) {
-          engine_.SetPlayerTurn(FLAGS_player1);
+          if (engine_.IsPlayerTurn(FLAGS_player1)) {
+            player1_color_ = kBlue;
+            player2_color_ = kOrange;
+          } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
+            player2_color_ = kBlue;
+            player1_color_ = kOrange;
+          }
           is_first_turn_ = false;
         } else if (orange_scored_) {
-          engine_.SetPlayerTurn(FLAGS_player2);
+          if (engine_.IsPlayerTurn(FLAGS_player1)) {
+            player1_color_ = kOrange;
+            player2_color_ = kBlue;
+          } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
+            player2_color_ = kOrange;
+            player1_color_ = kBlue;
+          }
           is_first_turn_ = false;
         } else {
           engine_.SwitchPlayerTurn();
@@ -146,14 +182,22 @@ void PoolApp::update() {
         // If foul is committed, deal with it accordingly
       } else if (contact == kCueBall
           || (contact == kEightBall && engine_.GetPlayerScore(player) < 7)
-          || (engine_.IsPlayerTurn(FLAGS_player1) && (contact > kEightBall))
-          || (engine_.IsPlayerTurn(FLAGS_player2) && (contact < kEightBall))) {
+          || (contact < kEightBall && player == FLAGS_player1 && player1_color_ == kOrange)
+          || (contact < kEightBall && player == FLAGS_player2 && player2_color_ == kOrange)
+          || (contact > kEightBall && player == FLAGS_player1 && player1_color_ == kBlue)
+          || (contact > kEightBall && player == FLAGS_player2 && player2_color_ == kBlue)) {
         engine_.SwitchPlayerTurn();
         state_ = GameState::kFoulSetup;
 
-        // If player has made one their balls, continue their turn
-      } else if ((engine_.IsPlayerTurn(FLAGS_player1) && blue_scored_)
-          || (engine_.IsPlayerTurn(FLAGS_player2) && orange_scored_)) {
+        // If player has made one of their balls, continue their turn
+      } else if ((engine_.IsPlayerTurn(FLAGS_player1)
+          && player1_color_ == kBlue && blue_scored_)
+          || (engine_.IsPlayerTurn(FLAGS_player2)
+          && player2_color_ == kBlue && blue_scored_)
+          || (engine_.IsPlayerTurn(FLAGS_player1)
+          && player1_color_ == kOrange && orange_scored_)
+          || (engine_.IsPlayerTurn(FLAGS_player2)
+          && player2_color_ == kOrange && orange_scored_)) {
         state_ = GameState::kSetup;
 
         // If nothing happened, just switch turns
@@ -184,6 +228,8 @@ void PoolApp::update() {
 void PoolApp::draw() {
   if (state_ == GameState::kStartScreen) {
     DrawStartScreen();
+  } else if (state_ == GameState::kHelpScreen) {
+    DrawHelpScreen();
   } else {
     cinder::gl::clear(Color(0.15f, 0.15f, 0.15f));
     DrawPoolTable();
@@ -228,14 +274,14 @@ float KeepInRange(float center, float lim, float pos) {
 // Helper method to print text in a text box at a specified location
 // *Taken from the snake app
 void PrintText(const string& text, const Color& color,
-    const cinder::ivec2& size,
+    const cinder::ivec2& size, const string& font,
     const int font_size, const cinder::vec2& loc) {
 
   cinder::gl::color(color);
 
   auto box = TextBox()
       .alignment(TextBox::CENTER)
-      .font(cinder::Font("Karmatic Arcade", static_cast<float>(font_size)))
+      .font(cinder::Font(font, static_cast<float>(font_size)))
       .size(size)
       .color(color)
       .backgroundColor(ColorA(0, 0, 0, 0))
@@ -261,19 +307,82 @@ void PoolApp::DrawStartScreen() const {
             static_cast<int>(getWindowWidth()  / 2 + 150),
             static_cast<int>(getWindowHeight() / 2 + 150)), 20.0f);
 
-  const cinder::vec2 center = getWindowCenter();
-  const cinder::ivec2 size = {1500, 75};
+  cinder::vec2 center = getWindowCenter();
+  cinder::ivec2 size = {1500, 75};
   Color color = Color::gray(0.4f);
   // Title shadow text
-  PrintText("8-Ball Pool", color, size,
-            100, {center.x, center.y - 100});
+  PrintText("8-Ball Pool", color, size, kDefaultFont,
+            kLargeFont, {center.x, center.y - 100});
   // Start button text
-  PrintText("Start", color, size,
+  PrintText("Start", color, size, kDefaultFont,
             kNormalFont, {center.x, center.y + 100});
   color = Color::white();
   // Title main text
-  PrintText("8-Ball Pool", color, size,
-            100, {center.x + 10, center.y - 110});
+  PrintText("8-Ball Pool", color, size, kDefaultFont,
+            kLargeFont, {center.x + 10, center.y - 110});
+
+  // Draw help button shape
+  cinder::gl::color(0.4f, 0.4f, 0.4f);
+  cinder::gl::drawSolidRoundedRect(
+      Rectf(static_cast<int>(getWindowWidth() / 2 - 75),
+            static_cast<int>(getWindowHeight()  / 2 + 225),
+            static_cast<int>(getWindowWidth()  / 2 + 75),
+            static_cast<int>(getWindowHeight() / 2 + 275)), 20.0f);
+
+  center = getWindowCenter();
+  size = {250, 75};
+  color = Color::white();
+  // Help button text
+  PrintText("Help", color, size, kDefaultFont,
+            kSmallFont, {center.x, center.y + 250});
+}
+
+void PoolApp::DrawHelpScreen() const {
+  // Background color
+  cinder::gl::clear(Color(0.039f, 0.424f, 0.012f));
+
+  // Print the instructions
+  cinder::vec2 pos = {0, 0};
+  cinder::gl::drawString("Using your mouse, left click to place the "
+                         "ball and continue pressing down on the cursor to "
+                         "drag the cue stick\naround the ball and adjust "
+                         "strength. Let go when ready to shoot. Be aware "
+                         "not to commit a foul.\n"
+                         "  \n"
+                         "  Fouls consist of:\n"
+                         "  - Pocketing the white cue ball\n"
+                         "  - Not making contact with the ball of your own "
+                         "color first\n"
+                         "  - Not making contact with any balls\n"
+                         "  \n"
+                         "    *You do not have to make contact with a ball "
+                         "of your color before the first ball is pocketed and "
+                         "you must\nmake contact with the 8-ball if you have "
+                         "already made all of your other balls\n"
+                         "  \n"
+                         "The goal is to pocket all of the balls of your own "
+                         "color. Once you do, then you must pocket the 8-ball "
+                         "to win\nthe game. If you pocket the 8-ball before "
+                         "before you pocket all of your other balls, you will"
+                         " lose. If you\npocket one of your balls, you will "
+                         "be given another turn to go until you miss again.",
+                         pos, Color::white(),
+                         cinder::Font("Haettenschweiler", 70));
+
+  // Draw back button shape
+  cinder::gl::color(0.4f, 0.4f, 0.4f);
+  cinder::gl::drawSolidRoundedRect(
+      Rectf(static_cast<int>(getWindowWidth() / 2 - 75),
+            static_cast<int>(getWindowHeight()  / 2 + 325),
+            static_cast<int>(getWindowWidth()  / 2 + 75),
+            static_cast<int>(getWindowHeight() / 2 + 375)), 20.0f);
+
+  cinder::vec2 center = getWindowCenter();
+  cinder::vec2 size = {250, 75};
+  Color color = Color::white();
+  // Back button text
+  PrintText("Back", color, size, kDefaultFont,
+            kSmallFont, {center.x, center.y + 350});
 }
 
 void PoolApp::DrawPoolTable() const {
@@ -343,9 +452,9 @@ void PoolApp::DrawPoolBalls() const {
     } else if (ball.first == kEightBall) {
       cinder::gl::color(0.0f, 0.0f, 0.0f);
     } else if (ball.first < kEightBall) {
-      cinder::gl::color(kPlayer1Color);
+      cinder::gl::color(kBlue);
     } else {
-      cinder::gl::color(kPlayer2Color);
+      cinder::gl::color(kOrange);
     }
 
     // Draw ball with correct color chosen
@@ -355,7 +464,7 @@ void PoolApp::DrawPoolBalls() const {
 
   // First player's pocketed balls in the side bar
   for (int i = 0; i < engine_.GetPlayerScore(FLAGS_player1); i++) {
-    cinder::gl::color(kPlayer1Color);
+    cinder::gl::color(player1_color_);
     cinder::vec2 center = {130.0f, 430.0f + i * 40.0f};
     cinder::gl::drawSolidCircle(center, pool::kBallRadius + 0.5f);
     cinder::gl::color(1.0f, 1.0f, 1.0f);
@@ -363,7 +472,7 @@ void PoolApp::DrawPoolBalls() const {
 
   // Second player's pocketed balls in the side bar
   for (int i = 0; i < engine_.GetPlayerScore(FLAGS_player2); i++) {
-    cinder::gl::color(kPlayer2Color);
+    cinder::gl::color(player2_color_);
     cinder::vec2 center = {getWindowWidth() - 130.0f, 430.0f + i * 40.0f};
     cinder::gl::drawSolidCircle(center, pool::kBallRadius + 0.5f);
     cinder::gl::color(1.0f, 1.0f, 1.0f);
@@ -387,9 +496,9 @@ void PoolApp::DrawCueStick() const {
 
   // Determine accent color
   if (engine_.IsPlayerTurn(FLAGS_player1)) {
-    cinder::gl::color(kPlayer1Color);
+    cinder::gl::color(player1_color_);
   } else {
-    cinder::gl::color(kPlayer2Color);
+    cinder::gl::color(player2_color_);
   }
 
   // Accents
@@ -430,26 +539,39 @@ void PoolApp::DrawGuideLine() const {
 
 void PoolApp::DrawScoreText() const {
   cinder::vec2 center = {130, 75};
-  cinder::ivec2 size = {220, 50};
+
+  // Highlight players name if it is their turn
+  cinder::gl::color(Color::gray(0.5f));
+  if (engine_.IsPlayerTurn(FLAGS_player1)) {
+    cinder::gl::drawSolidRoundedRect(Rectf(center.x - 115,
+        center.y - 30, center.x + 120, center.y + 30), 15.0f);
+  } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
+    center = {getWindowWidth() - 130, 75};
+    cinder::gl::drawSolidRoundedRect(Rectf(center.x - 115,
+        center.y - 30, center.x + 120, center.y + 30), 15.0f);
+  }
+
+  center = {130, 75};
+  cinder::vec2 size = {220, 50};
 
   // Player 1 score text
-  Color color = kPlayer1Color;
-  PrintText(FLAGS_player1, Color(0.245f, 0.371f, 0.774f), size, kSmallFont,
+  Color color = player1_color_;
+  PrintText(FLAGS_player1, color, size, kDefaultFont, kSmallFont,
       {center.x + 5, center.y + 5});
   color = Color::white();
-  PrintText(FLAGS_player1, color, size, kSmallFont, center);
+  PrintText(FLAGS_player1, color, size, kDefaultFont, kSmallFont, center);
   PrintText(std::to_string(engine_.GetPlayerScore(FLAGS_player1)),
-      color, size, kSmallFont, {center.x, center.y + 65});
+      color, size, kDefaultFont, kSmallFont, {center.x, center.y + 65});
 
   // Player 2 score text
   center = {getWindowWidth() - 130, 75};
-  color = kPlayer2Color;
-  PrintText(FLAGS_player2, color, size, kSmallFont,
+  color = player2_color_;
+  PrintText(FLAGS_player2, color, size, kDefaultFont, kSmallFont,
       {center.x + 5, center.y + 5});
   color = Color::white();
-  PrintText(FLAGS_player2, color, size, kSmallFont, center);
+  PrintText(FLAGS_player2, color, size, kDefaultFont, kSmallFont, center);
   PrintText(std::to_string(engine_.GetPlayerScore(FLAGS_player2)),
-      color, size, kSmallFont, {center.x, center.y + 65});
+      color, size, kDefaultFont, kSmallFont, {center.x, center.y + 65});
 
   // If foul was committed last turn, display who fouled
   center = {getWindowCenter().x, getWindowCenter().y + 425.0f};
@@ -457,10 +579,10 @@ void PoolApp::DrawScoreText() const {
   if (state_ == GameState::kFoulSetup) {
     if (engine_.IsPlayerTurn(FLAGS_player1)) {
       PrintText("Foul by " + FLAGS_player2,
-      color, size, kSmallFont, center);
+      color, size, kDefaultFont, kSmallFont, center);
     } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
       PrintText("Foul by " + FLAGS_player1,
-      color, size, kSmallFont, center);
+      color, size, kDefaultFont, kSmallFont, center);
     }
   }
 }
@@ -479,7 +601,7 @@ void PoolApp::DrawEndScreen() const {
   const cinder::ivec2 size = {700, 500};
   // End screen text
   PrintText("Game Over\n\n" + winner_ + " wins",
-      Color::white(), size, 50, getWindowCenter());
+      Color::white(), size, kDefaultFont, kNormalFont, getWindowCenter());
 }
 
 void PoolApp::mouseDown(MouseEvent event) {
@@ -488,12 +610,29 @@ void PoolApp::mouseDown(MouseEvent event) {
 
     // On start, if start button is clicked, begin game
     if (state_ == GameState::kStartScreen) {
-      if (event.getX() >= getWindowWidth() / 2 - 150
-          && event.getX() <= getWindowWidth() / 2 + 150
-          && event.getY() >= getWindowHeight() / 2 + 50
-          && event.getY() <= getWindowHeight() / 2 + 150) {
+      if (event.getX() >= getWindowWidth() / 2 - 150 &&
+          event.getX() <= getWindowWidth() / 2 + 150 &&
+          event.getY() >= getWindowHeight() / 2 + 50 &&
+          event.getY() <= getWindowHeight() / 2 + 150) {
         state_ = GameState::kBeginGame;
+
+        // If help button is pressed, display help screen
+      } else if (event.getX() >= getWindowWidth() / 2 - 75 &&
+                 event.getX() <= getWindowWidth() / 2 + 225 &&
+                 event.getY() >= getWindowHeight() / 2 + 75 &&
+                 event.getY() <= getWindowHeight() / 2 + 275) {
+        state_ = GameState::kHelpScreen;
       }
+
+      // If on help screen, when back button is pressed, go back to start
+    } else if (state_ == GameState::kHelpScreen) {
+      if (event.getX() >= getWindowWidth() / 2 - 75 &&
+          event.getX() <= getWindowWidth() / 2 + 325 &&
+          event.getY() >= getWindowHeight() / 2 + 75 &&
+          event.getY() <= getWindowHeight() / 2 + 375) {
+        state_ = GameState::kStartScreen;
+      }
+
       // If in setup, move cue to mouse position
     } else if (state_ == GameState::kSetup) {
       cue_stick_.SetupCueStick(mouse_pos,
