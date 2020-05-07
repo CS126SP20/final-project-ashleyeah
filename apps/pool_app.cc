@@ -92,12 +92,22 @@ void PoolApp::update() {
         engine_.RemoveBall(ball.first);
         state_ = GameState::kGameOver;
 
-        // Checks if any other ball is pocketed -> Ball is removed
+        // Checks if any blue ball is pocketed -> Ball is removed
       } else if (engine_.Pocketed(ball.second->GetBody())) {
         // Increases the score of the player with that colored ball
         if (ball.first < kEightBall) {
+
+          // If first turn and player has scored, then set players to their
+          // corresponding colors, add score, and set first turn to false
           if (is_first_turn_) {
             engine_.IncreasePlayerScore(engine_.GetPlayerTurn());
+            if (engine_.IsPlayerTurn(FLAGS_player1)) {
+              player1_color_ = kBlue;
+              player2_color_ = kOrange;
+            } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
+              player2_color_ = kBlue;
+              player1_color_ = kOrange;
+            }
           } else {
             if (player1_color_ == kBlue) {
               engine_.IncreasePlayerScore(FLAGS_player1);
@@ -106,9 +116,20 @@ void PoolApp::update() {
             }
           }
           blue_scored_ = true;
+
+          // Checks if orange ball is pocketed
         } else if (ball.first > kEightBall) {
+
+          // Repeat same process for first turn as above
           if (is_first_turn_) {
             engine_.IncreasePlayerScore(engine_.GetPlayerTurn());
+            if (engine_.IsPlayerTurn(FLAGS_player1)) {
+              player1_color_ = kOrange;
+              player2_color_ = kBlue;
+            } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
+              player2_color_ = kOrange;
+              player1_color_ = kBlue;
+            }
           } else {
             if (player1_color_ == kOrange) {
               engine_.IncreasePlayerScore(FLAGS_player1);
@@ -153,26 +174,9 @@ void PoolApp::update() {
         player = FLAGS_player2;
       }
 
-      // If turn is before first shot is made, ignore some foul rules and
-      // set the corresponding color of the players
+      // If turn is before first shot is made, ignore some foul rules
       if (is_first_turn_) {
-        if (blue_scored_) {
-          if (engine_.IsPlayerTurn(FLAGS_player1)) {
-            player1_color_ = kBlue;
-            player2_color_ = kOrange;
-          } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
-            player2_color_ = kBlue;
-            player1_color_ = kOrange;
-          }
-          is_first_turn_ = false;
-        } else if (orange_scored_) {
-          if (engine_.IsPlayerTurn(FLAGS_player1)) {
-            player1_color_ = kOrange;
-            player2_color_ = kBlue;
-          } else if (engine_.IsPlayerTurn(FLAGS_player2)) {
-            player2_color_ = kOrange;
-            player1_color_ = kBlue;
-          }
+        if (blue_scored_ || orange_scored_) {
           is_first_turn_ = false;
         } else {
           engine_.SwitchPlayerTurn();
